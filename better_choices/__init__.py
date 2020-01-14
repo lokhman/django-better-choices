@@ -3,7 +3,11 @@
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple, Union
 
-from django.utils.functional import Promise
+try:
+    from django.utils.functional import Promise
+except ImportError:
+    class Promise:
+        pass
 
 from .version import __version__
 
