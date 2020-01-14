@@ -9,7 +9,11 @@ python:
 matrix:
   fast_finish: true
 
-install: skip
+install:
+  - pip install codecov
 
 script:
-  - python tests.py
+  - coverage run tests.py
+
+after_success:
+  - codecov
