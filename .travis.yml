@@ -9,7 +9,7 @@ python:
 matrix:
   fast_finish: true
 
-install: false
+install: skip
 
 script:
   - python tests.py
