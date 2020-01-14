@@ -47,23 +47,24 @@ class Choices(metaclass=__ChoicesMetaclass):
                 REVIEW = 'On Review'
 
         # init via inline definition
-        PAYMENT_STATUS = Choices('PAYMENT_STATUS', SUCCESS='Success', FAIL='Error')
+        ORDER_STATUS = Choices('ORDER_STATUS', SUCCESS='Success', FAIL='Error')
 
         # choice accessors
         choice_created = ORDER_STATUS.CREATED
         choice_on_hold = ORDER_STATUS['ON_HOLD']
 
-        # choice params and inner choice accessors
+        # choice parameters and inner choice accessors
         print( ORDER_STATUS.CREATED.value )             # 'created'
-        print( ORDER_STATUS.PENDING.help_text )         # 'This set status to pending'
         print( ORDER_STATUS.ON_HOLD.value )             # 'custom_on_hold'
+        print( ORDER_STATUS.PENDING.display )           # 'Pending'
+        print( ORDER_STATUS.PENDING.help_text )         # 'This set status to pending'
         print( ORDER_STATUS.INTERNAL_STATUS.REVIEW )    # 'review'
 
         # search in choices
         'created' in ORDER_STATUS                       # True
-        'on_hold' in ORDER_STATUS                       # False
         'custom_on_hold' in ORDER_STATUS                # True
-        key, choice = ORDER_STATUS.find('created')
+        'on_hold' in ORDER_STATUS                       # False
+        key, choice = ORDER_STATUS.find('created')      # ('CREATED', Choices.Choice)
 
         # search in subsets
         'custom_on_hold' in ORDER_STATUS.VALID          # True
@@ -74,6 +75,10 @@ class Choices(metaclass=__ChoicesMetaclass):
             print( value, display )
         for key, choice in ORDER_STATUS.items():
             print( key, choice.value, choice.display )
+        for key in ORDER_STATUS.keys():
+            print( key )
+        for choice in ORDER_STATUS.choices():
+            print( choice.value, choice.display )
 
         # Django model fields
         class Order(models.Model):
