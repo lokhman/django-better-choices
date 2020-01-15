@@ -1,5 +1,7 @@
 # Django Better Choices
 
+[![PyPI](https://img.shields.io/pypi/v/django-better-choices)](https://pypi.org/project/django-better-choices)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-better-choices)
 [![Build Status](https://travis-ci.org/lokhman/django-better-choices.svg?branch=master)](https://travis-ci.org/lokhman/django-better-choices)
 [![codecov](https://codecov.io/gh/lokhman/django-better-choices/branch/master/graph/badge.svg)](https://codecov.io/gh/lokhman/django-better-choices)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
