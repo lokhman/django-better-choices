@@ -45,10 +45,11 @@ PAGE_STATUS = Choices('PAGE_STATUS', SUCCESS='Success', FAIL='Error')
 > of the returned object.
 
 ### Choice accessors
-You can access choices with dot and square-brackets notation.
+You can access choices using dot notation and `getattr()`.
 ```python
 choice_created = PAGE_STATUS.CREATED
-choice_on_hold = PAGE_STATUS['ON_HOLD']
+choice_review = PAGE_STATUS.INTERNAL_STATUS.REVIEW
+choice_on_hold = getattr(PAGE_STATUS, 'ON_HOLD')
 ```
 
 ### Choice parameters and inner choice accessors
@@ -59,7 +60,7 @@ print( PAGE_STATUS.CREATED.value )              # 'created'
 print( PAGE_STATUS.ON_HOLD.value )              # 'custom_on_hold'
 print( PAGE_STATUS.PENDING.display )            # 'Pending'
 print( PAGE_STATUS.PENDING.help_text )          # 'This set status to pending'
-print( PAGE_STATUS.INTERNAL_STATUS.REVIEW )     # 'review'
+print( PAGE_STATUS.PENDING )                    # 'pending'
 ```
 > Every `Choices.Choice` object has a defined string representation of a `value` of the choice.
 > `Choices.Choice` is a frozen data class, which object cannot be legally modified after the definition.
@@ -77,6 +78,7 @@ Search in choices is performed by choice `value`.
 'created' in PAGE_STATUS                        # True
 'custom_on_hold' in PAGE_STATUS                 # True
 'on_hold' in PAGE_STATUS                        # False
+choice = PAGE_STATUS['custom_on_hold']          # Choices.Choice
 key, choice = PAGE_STATUS.find('created')       # ('CREATED', Choices.Choice)
 ```
 
@@ -87,7 +89,7 @@ choice or choice `value`.
 'custom_on_hold' in PAGE_STATUS.VALID           # True
 PAGE_STATUS.CREATED in PAGE_STATUS.VALID        # True
 ```
-> `Choices.Subset` is a `frozenset` that cannot be modified after the definition.
+> `Choices.Subset` is a subclass of `tuple` that cannot be modified after the definition.
 
 ### Choices iteration
 Choices class implements `__iter__` magic method, hence choices are iterable and return a tuple of `(value, display)`.
