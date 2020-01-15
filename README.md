@@ -1,8 +1,13 @@
 # Django Better Choices
+
+[![Build Status](https://travis-ci.org/lokhman/django-better-choices.svg?branch=master)](https://travis-ci.org/lokhman/django-better-choices)
+[![codecov](https://codecov.io/gh/lokhman/django-better-choices/branch/master/graph/badge.svg)](https://codecov.io/gh/lokhman/django-better-choices)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Better [choices](https://docs.djangoproject.com/en/3.0/ref/models/fields/#choices) library for Django web framework.
 
 ## Requirements
-This library was written for Python 3.7+ and will not work in earlier versions.
+This library was written for Python 3.7+ and will not work in any earlier versions.
 
 ## Install
 
