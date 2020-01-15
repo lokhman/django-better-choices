@@ -1,7 +1,7 @@
 import unittest
 
-from django_better_choices import Choices
 from collections.abc import Iterable
+from django_better_choices import Choices
 
 
 class TestCase(unittest.TestCase):
