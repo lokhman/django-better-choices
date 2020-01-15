@@ -39,7 +39,7 @@ class Choices(metaclass=__ChoicesMetaclass):
 
     Example:
         # init via class definition
-        class STATUSES(Choices):
+        class PAGE_STATUS(Choices):
             CREATED = 'Created'
             PENDING = Choices.Choice('Pending', help_text='This set status to pending')
             ON_HOLD = Choices.Choice('On Hold', value='custom_on_hold')
@@ -51,47 +51,47 @@ class Choices(metaclass=__ChoicesMetaclass):
                 REVIEW = 'On Review'
 
         # init via inline definition
-        STATUSES = Choices('STATUSES', SUCCESS='Success', FAIL='Error')
+        PAGE_STATUS = Choices('PAGE_STATUS', SUCCESS='Success', FAIL='Error')
 
         # choice accessors
-        choice_created = STATUSES.CREATED
-        choice_on_hold = STATUSES['ON_HOLD']
+        choice_created = PAGE_STATUS.CREATED
+        choice_on_hold = PAGE_STATUS['ON_HOLD']
 
         # choice parameters and inner choice accessors
-        print( STATUSES.CREATED.value )             # 'created'
-        print( STATUSES.ON_HOLD.value )             # 'custom_on_hold'
-        print( STATUSES.PENDING.display )           # 'Pending'
-        print( STATUSES.PENDING.help_text )         # 'This set status to pending'
-        print( STATUSES.INTERNAL_STATUS.REVIEW )    # 'review'
+        print( PAGE_STATUS.CREATED.value )              # 'created'
+        print( PAGE_STATUS.ON_HOLD.value )              # 'custom_on_hold'
+        print( PAGE_STATUS.PENDING.display )            # 'Pending'
+        print( PAGE_STATUS.PENDING.help_text )          # 'This set status to pending'
+        print( PAGE_STATUS.INTERNAL_STATUS.REVIEW )     # 'review'
 
         # search in choices
-        'created' in STATUSES                       # True
-        'custom_on_hold' in STATUSES                # True
-        'on_hold' in STATUSES                       # False
-        key, choice = STATUSES.find('created')      # ('CREATED', Choices.Choice)
+        'created' in PAGE_STATUS                        # True
+        'custom_on_hold' in PAGE_STATUS                 # True
+        'on_hold' in PAGE_STATUS                        # False
+        key, choice = PAGE_STATUS.find('created')       # ('CREATED', Choices.Choice)
 
         # search in subsets
-        'custom_on_hold' in STATUSES.VALID          # True
-        STATUSES.CREATED in STATUSES.VALID          # True
+        'custom_on_hold' in PAGE_STATUS.VALID           # True
+        PAGE_STATUS.CREATED in PAGE_STATUS.VALID        # True
 
         # choices iteration
-        for value, display in STATUSES:
+        for value, display in PAGE_STATUS:
             print( value, display )
-        for key, choice in STATUSES.items():
+        for key, choice in PAGE_STATUS.items():
             print( key, choice.value, choice.display )
-        for key in STATUSES.keys():
+        for key in PAGE_STATUS.keys():
             print( key )
-        for choice in STATUSES.choices():
+        for choice in PAGE_STATUS.choices():
             print( choice.value, choice.display )
 
         # Django model fields
-        class MyModel(models.Model):
-            status = models.CharField(choices=STATUSES, default=STATUSES.CREATED)
+        class Page(models.Model):
+            status = models.CharField(choices=PAGE_STATUS, default=PAGE_STATUS.CREATED)
 
         # saving choices on models
-        model = MyModel.objects.get(pk=1)
-        model.status = STATUSES.PENDING
-        model.save()
+        page = Page.objects.get(pk=1)
+        page.status = PAGE_STATUS.PENDING
+        page.save()
     """
 
     @dataclass(init=False, frozen=True)
