@@ -103,14 +103,8 @@ class TestCase(unittest.TestCase):
 
     def test_extract(self):
         self.assertTupleEqual(
-            (
-                ('VAL1', ('val1', None, None)),
-                ('VAL2', ('val2', None, None)),
-                ('VAL3', ('value-3', None, None)),
-                ('VAL4', ('val4', 'Param 4.1', None)),
-                ('VAL5', ('val5', 'Param 5.1', 'Param 5.2')),
-            ),
-            self.CONST.extract('value', 'param1', 'param2')
+            ('Display 1', 'Display 2', 'Display 3', 'Display 4', 'Display 5'),
+            self.CONST.extract('display')
         )
         self.assertTupleEqual(
             (
@@ -120,11 +114,17 @@ class TestCase(unittest.TestCase):
                 ('val4', 'Param 4.1'),
                 ('val5', 'Param 5.1'),
             ),
-            self.CONST.extract('value', 'param1', flat=True)
+            self.CONST.extract('value', 'param1')
         )
         self.assertTupleEqual(
-            ('Display 1', 'Display 2', 'Display 3', 'Display 4', 'Display 5'),
-            self.CONST.extract('display', flat=True)
+            (
+                ('VAL1', ('val1', None, None)),
+                ('VAL2', ('val2', None, None)),
+                ('VAL3', ('value-3', None, None)),
+                ('VAL4', ('val4', 'Param 4.1', None)),
+                ('VAL5', ('val5', 'Param 5.1', 'Param 5.2')),
+            ),
+            self.CONST.extract('value', 'param1', 'param2', with_keys=True)
         )
 
 

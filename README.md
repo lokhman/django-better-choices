@@ -130,14 +130,14 @@ class CONST(Choices):
     VAL2 = Choices.Choice('Value 2', par2='Param 2.2')
     VAL3 = Choices.Choice('Value 3', par1='Param 3.1', par2='Param 3.2')
 
-print( CONST.extract('value', 'par1') )
-# (('VAL1', ('val1', 'Param 1.1')), ('VAL2', ('val2', None)), ('VAL3', ('val3', 'Param 3.1')))
+print( CONST.extract('par1') )
+# ('Param 1.1', None, 'Param 3.1')
 
-print( CONST.extract('value', 'par1', flat=True) )
+print( CONST.extract('value', 'par1') )
 # (('val1', 'Param 1.1'), ('val2', None), ('val3', 'Param 3.1'))
 
-print( CONST.extract('par1', flat=True) )
-# ('Param 1.1', None, 'Param 3.1')
+print( CONST.extract('value', 'par1', with_keys=True) )
+# (('VAL1', ('val1', 'Param 1.1')), ('VAL2', ('val2', None)), ('VAL3', ('val3', 'Param 3.1')))
 ```
 
 ## Tests

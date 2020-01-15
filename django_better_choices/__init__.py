@@ -30,7 +30,7 @@ class __ChoicesMetaclass(type):
         return f'Choices({self.__name__!r}, {self.__str_kwargs()})'
 
     def __str_kwargs(self) -> str:
-        return ', '.join(f'{k}={v!r}' for k, (v,) in self.extract('display'))
+        return ', '.join(f'{k}={v!r}' for k, (v,) in self.extract('display', with_keys=True))
 
 
 class Choices(metaclass=__ChoicesMetaclass):
@@ -216,7 +216,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         return None
 
     @classmethod
-    def extract(cls, *params: str, flat: bool = False) -> Tuple[Tuple, ...]:
+    def extract(cls, *params: str, with_keys: bool = False) -> Tuple[Tuple, ...]:
         """
         Return a tuple of extracted params of choices.
 
@@ -226,21 +226,21 @@ class Choices(metaclass=__ChoicesMetaclass):
                 VAL2 = Choices.Choice('Value 2', par2='Param 2.2')
                 VAL3 = Choices.Choice('Value 3', par1='Param 3.1', par2='Param 3.2')
 
-            print( CONST.extract('value', 'par1') )
-            # (('VAL1', ('val1', 'Param 1.1')), ('VAL2', ('val2', None)), ('VAL3', ('val3', 'Param 3.1')))
+            print( CONST.extract('par1') )
+            # ('Param 1.1', None, 'Param 3.1')
 
-            print( CONST.extract('value', 'par1', flat=True) )
+            print( CONST.extract('value', 'par1') )
             # (('val1', 'Param 1.1'), ('val2', None), ('val3', 'Param 3.1'))
 
-            print( CONST.extract('par1', flat=True) )
-            # ('Param 1.1', None, 'Param 3.1')
+            print( CONST.extract('value', 'par1', with_keys=True) )
+            # (('VAL1', ('val1', 'Param 1.1')), ('VAL2', ('val2', None)), ('VAL3', ('val3', 'Param 3.1')))
 
         Args:
             params: Names of parameters to extract.
-            flat (Optional[bool]): If True return extracted values without choice keys.
+            with_keys (Optional[bool]): If True return extracted values with choice keys.
         """
         extracted = []
         for key, choice in cls.__choices.items():
             values = tuple(getattr(choice, param, None) for param in params)
-            extracted.append((values[0] if len(values) == 1 else values) if flat else (key, values))
+            extracted.append((key, values) if with_keys else (values[0] if len(values) == 1 else values))
         return tuple(extracted)
