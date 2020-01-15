@@ -14,10 +14,7 @@ from .version import __version__
 
 class __ChoicesMetaclass(type):
     def __contains__(self, value: str) -> bool:
-        for choice in self.choices():
-            if choice.value == value:
-                return True
-        return False
+        return self.find(value) is not None
 
     def __iter__(self):
         for choice in self.choices():
@@ -55,14 +52,15 @@ class Choices(metaclass=__ChoicesMetaclass):
 
         # choice accessors
         choice_created = PAGE_STATUS.CREATED
-        choice_on_hold = PAGE_STATUS['ON_HOLD']
+        choice_review = PAGE_STATUS.INTERNAL_STATUS.REVIEW
+        choice_on_hold = getattr(PAGE_STATUS, 'ON_HOLD')
 
         # choice parameters and inner choice accessors
         print( PAGE_STATUS.CREATED.value )              # 'created'
         print( PAGE_STATUS.ON_HOLD.value )              # 'custom_on_hold'
         print( PAGE_STATUS.PENDING.display )            # 'Pending'
         print( PAGE_STATUS.PENDING.help_text )          # 'This set status to pending'
-        print( PAGE_STATUS.INTERNAL_STATUS.REVIEW )     # 'review'
+        print( PAGE_STATUS.PENDING )                    # 'pending'
 
         # choice comparison
         PAGE_STATUS.ON_HOLD == 'custom_on_hold'         # True
@@ -72,6 +70,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         'created' in PAGE_STATUS                        # True
         'custom_on_hold' in PAGE_STATUS                 # True
         'on_hold' in PAGE_STATUS                        # False
+        choice = PAGE_STATUS['custom_on_hold']          # Choices.Choice
         key, choice = PAGE_STATUS.find('created')       # ('CREATED', Choices.Choice)
 
         # search in subsets
@@ -194,7 +193,9 @@ class Choices(metaclass=__ChoicesMetaclass):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
+        cls.__index = {}
         cls.__choices = {}
+
         for key, choice in vars(cls).items():
             if callable(choice) or not key.isupper():
                 continue
@@ -202,19 +203,24 @@ class Choices(metaclass=__ChoicesMetaclass):
             if isinstance(choice, cls.Choice):
                 if choice.value is None:
                     object.__setattr__(choice, 'value', key.lower())
+                elif choice.value in cls.__index:
+                    raise ValueError(f"choice '{cls.__name__}.{key}' has duplicated value: {choice.value!r}")
+                cls.__index[choice.value] = key
                 cls.__choices[key] = choice
             elif isinstance(choice, (str, Promise)):
                 choice = cls.Choice(choice, value=key.lower())
+                cls.__index[choice.value] = key
                 cls.__choices[key] = choice
                 setattr(cls, key, choice)
             elif isinstance(choice, cls.Subset):
                 if any(not isinstance(c, cls.Choice) for c in choice):
-                    setattr(cls, key, cls.Subset(*map(lambda c: c if isinstance(c, cls.Choice) else cls[c], choice)))
+                    subset = cls.Subset(*map(lambda c: c if isinstance(c, cls.Choice) else getattr(cls, c), choice))
+                    setattr(cls, key, subset)
             else:
                 raise TypeError(f"choice '{cls.__name__}.{key}' has invalid type: '{type(choice).__name__}'")
 
-    def __class_getitem__(cls, key: str) -> 'Choice':
-        return cls.__choices[key]
+    def __class_getitem__(cls, value: str) -> 'Choice':
+        return cls.__choices[cls.__index[value]]
 
     @classmethod
     def items(cls) -> Tuple[Tuple[str, 'Choice'], ...]:
@@ -234,10 +240,11 @@ class Choices(metaclass=__ChoicesMetaclass):
     @classmethod
     def find(cls, value: str) -> Optional[Tuple[str, 'Choice']]:
         """Return key-choice tuple if the given value exists in the choices, otherwise return None."""
-        for key, choice in cls.__choices.items():
-            if choice.value == value:
-                return key, choice
-        return None
+        try:
+            key = cls.__index[value]
+        except KeyError:
+            return None
+        return key, cls.__choices[key]
 
     @classmethod
     def extract(cls, *params: str, with_keys: bool = False) -> Tuple[Any, ...]:

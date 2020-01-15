@@ -40,23 +40,25 @@ class TestCase(unittest.TestCase):
         self.assertEqual(LOCAL.VAL1, LOCAL.VAL1)
         self.assertNotEqual(LOCAL.VAL1, self.CONST.VAL1)
 
-        with self.assertRaises(RuntimeError):
-            LOCAL()  # init class
+        with self.assertRaises(RuntimeError):  # init class
+            LOCAL()
 
-        with self.assertRaises(TypeError):
-            Choices(VAL1=123.45)  # invalid choice type
+        with self.assertRaises(TypeError):  # invalid choice type
+            Choices(VAL1=123.45)
 
-        with self.assertRaises(KeyError):
-            Choices(SUBSET=Choices.Subset('VAL1'))  # invalid subset key
+        with self.assertRaises(ValueError):  # duplicated choice value
+            Choices(VAL1='Display 1', VAL2=Choices.Choice('Display 2', value='val1'))
 
-        with self.assertRaises(KeyError):
-            class _(Choices):  # invalid subset key reference
+        with self.assertRaises(AttributeError):  # invalid subset key
+            Choices(SUBSET=Choices.Subset('VAL1'))
+
+        with self.assertRaises(AttributeError):  # invalid subset key reference
+            class _(Choices):
                 VAL1 = 'Display 1'
                 SUBSET = Choices.Subset(VAL1)
 
     def test_accessors(self):
         self.assertIsInstance(self.CONST.VAL1, Choices.Choice)
-        self.assertIsInstance(self.CONST['VAL2'], Choices.Choice)
         self.assertIsInstance(self.CONST.NESTED.VAL10, Choices.Choice)
 
         self.assertEqual('Display 1', self.CONST.VAL1.display)
@@ -68,9 +70,6 @@ class TestCase(unittest.TestCase):
         with self.assertRaises(AttributeError):
             _ = self.CONST.VAL0
 
-        with self.assertRaises(KeyError):
-            _ = self.CONST['VAL0']
-
     def test_search(self):
         self.assertIn('val1', self.CONST)
         self.assertIn('value-3', self.CONST)
@@ -80,6 +79,11 @@ class TestCase(unittest.TestCase):
         self.assertEqual('VAL2', key)
         self.assertEqual('Display 2', choice.display)
         self.assertIsNone(self.CONST.find('val0'))
+
+        self.assertEqual(choice, self.CONST['val2'])
+
+        with self.assertRaises(KeyError):
+            _ = self.CONST['val0']
 
         self.assertIn('val2', self.CONST.SUBSET)
         self.assertNotIn('val4', self.CONST.SUBSET)
