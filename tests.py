@@ -1,6 +1,6 @@
 import unittest
 
-from better_choices import Choices
+from django_better_choices import Choices
 from collections.abc import Iterable
 
 

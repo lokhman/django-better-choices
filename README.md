@@ -18,7 +18,7 @@ This library was written for Python 3.7+ and will not work in any earlier versio
 ## Usage
 To start defining better choices, you need first to import the `Choices` class.
 ```python
-from better_choices import Choices
+from django_better_choices import Choices
 ```
 
 ### Class definition
