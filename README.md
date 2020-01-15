@@ -64,6 +64,13 @@ print( PAGE_STATUS.INTERNAL_STATUS.REVIEW )     # 'review'
 > Every `Choices.Choice` object has a defined string representation of a `value` of the choice.
 > `Choices.Choice` is a frozen data class, which object cannot be legally modified after the definition.
 
+### Choice comparison
+Choices can be compared by the string `value` or by the `Choice` itself.
+```python
+PAGE_STATUS.ON_HOLD == 'custom_on_hold'         # True
+PAGE_STATUS.CREATED == PAGE_STATUS.CREATED      # True
+```
+
 ### Search in choices
 Search in choices is performed by choice `value`.
 ```python

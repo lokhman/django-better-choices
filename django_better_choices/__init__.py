@@ -64,6 +64,10 @@ class Choices(metaclass=__ChoicesMetaclass):
         print( PAGE_STATUS.PENDING.help_text )          # 'This set status to pending'
         print( PAGE_STATUS.INTERNAL_STATUS.REVIEW )     # 'review'
 
+        # choice comparison
+        PAGE_STATUS.ON_HOLD == 'custom_on_hold'         # True
+        PAGE_STATUS.CREATED == PAGE_STATUS.CREATED      # True
+
         # search in choices
         'created' in PAGE_STATUS                        # True
         'custom_on_hold' in PAGE_STATUS                 # True
@@ -121,6 +125,11 @@ class Choices(metaclass=__ChoicesMetaclass):
 
         def __hash__(self):
             return super().__hash__()
+
+        def __eq__(self, other: Any) -> bool:
+            if isinstance(other, str):
+                return self.value == other
+            return super().__eq__(other)
 
         def __str__(self) -> str:
             if self.value is None:

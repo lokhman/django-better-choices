@@ -33,8 +33,12 @@ class TestCase(unittest.TestCase):
         self.assertEqual("LOCAL(VAL1='Display 1', VAL2='Display 2')", str(LOCAL))
         self.assertEqual("Choices('LOCAL', VAL1='Display 1', VAL2='Display 2')", repr(LOCAL))
 
-        self.assertEqual('val1', str(LOCAL.VAL1))
+        self.assertEqual('val1', LOCAL.VAL1)
+        self.assertEqual('val2', str(LOCAL.VAL2))
         self.assertEqual('', str(Choices.Choice('Standalone')))
+
+        self.assertEqual(LOCAL.VAL1, LOCAL.VAL1)
+        self.assertNotEqual(LOCAL.VAL1, self.CONST.VAL1)
 
         with self.assertRaises(RuntimeError):
             LOCAL()  # init class
