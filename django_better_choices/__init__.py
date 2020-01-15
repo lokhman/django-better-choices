@@ -30,7 +30,7 @@ class __ChoicesMetaclass(type):
         return f'Choices({self.__name__!r}, {self.__str_kwargs()})'
 
     def __str_kwargs(self) -> str:
-        return ', '.join(f'{k}={v!r}' for k, (v,) in self.extract('display', with_keys=True))
+        return ', '.join(f'{k}={v!r}' for k, v in self.extract('display', with_keys=True))
 
 
 class Choices(metaclass=__ChoicesMetaclass):
@@ -144,23 +144,47 @@ class Choices(metaclass=__ChoicesMetaclass):
             """
             return f'builtins.str', (self.__str__(),), {}
 
-    class Subset(frozenset):
+    class Subset(tuple):
         """Immutable subset of choices that is easy to search by using Choice object or value."""
 
         def __new__(cls, *choices: Union['Choices.Choice', str]):
-            return super().__new__(cls, choices)
+            return super().__new__(cls, dict.fromkeys(choices).keys())
+
+        def __init__(self, *_: Union['Choices.Choice', str]):
+            self.__index = {c.value for c in self if isinstance(c, Choices.Choice)}
 
         def __contains__(self, item: Union['Choices.Choice', str]) -> bool:
             if isinstance(item, Choices.Choice):
                 return super().__contains__(item)
+            return item in self.__index
 
-            for choice in self:
-                if choice.value == item:
-                    return True
-            return False
+        def extract(self, *params: str) -> Tuple[Any, ...]:
+            """
+            Return a tuple of extracted params of subset choices.
+
+            Example:
+                class CONST(Choices):
+                    VAL1 = Choices.Choice('Value 1', par1='Param 1.1')
+                    VAL2 = Choices.Choice('Value 2', par2='Param 2.2')
+                    VAL3 = Choices.Choice('Value 3', par1='Param 3.1', par2='Param 3.2')
+
+                    SUBSET = Choices.Subset(VAL1, VAL3)
+
+                print( CONST.SUBSET.extract('value') )
+                # ('val1', 'val3')
+
+                print( CONST.SUBSET.extract('value', 'display', 'par2') )
+                # (('val1', 'Value 1', None), ('val3', 'Value 3', 'Param 3.2'))
+
+            Args:
+                params (str): Names of parameters to extract.
+            """
+            return tuple(
+                getattr(c, params[0], None) if len(params) == 1 else tuple(getattr(c, p, None) for p in params)
+                for c in self
+            )
 
     def __new__(cls, name: Optional[str] = None, **choices: Union['Choice', str, Promise]):
-        """This will dynamically create a custom choices class from parameters (see inline definition example)."""
         if cls != Choices:
             raise RuntimeError(f"choices object '{cls.__name__}' cannot be initialized")
         if name is None:
@@ -216,7 +240,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         return None
 
     @classmethod
-    def extract(cls, *params: str, with_keys: bool = False) -> Tuple[Tuple, ...]:
+    def extract(cls, *params: str, with_keys: bool = False) -> Tuple[Any, ...]:
         """
         Return a tuple of extracted params of choices.
 
@@ -236,11 +260,13 @@ class Choices(metaclass=__ChoicesMetaclass):
             # (('VAL1', ('val1', 'Param 1.1')), ('VAL2', ('val2', None)), ('VAL3', ('val3', 'Param 3.1')))
 
         Args:
-            params: Names of parameters to extract.
+            params (str): Names of parameters to extract.
             with_keys (Optional[bool]): If True return extracted values with choice keys.
         """
-        extracted = []
-        for key, choice in cls.__choices.items():
-            values = tuple(getattr(choice, param, None) for param in params)
-            extracted.append((key, values) if with_keys else (values[0] if len(values) == 1 else values))
-        return tuple(extracted)
+        values = tuple(
+            getattr(c, params[0], None) if len(params) == 1 else tuple(getattr(c, p, None) for p in params)
+            for c in cls.__choices.values()
+        )
+        if with_keys:
+            return tuple(zip(cls.__choices.keys(), values))
+        return values

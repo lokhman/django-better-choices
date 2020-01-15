@@ -123,12 +123,14 @@ page.save()
 ```
 
 ### Parameter extraction
-The library provides a handy `extract` method to return specific parameters of the choices.
+The library provides handy `extract` methods to return specific parameters of the choices.
 ```python
 class CONST(Choices):
     VAL1 = Choices.Choice('Value 1', par1='Param 1.1')
     VAL2 = Choices.Choice('Value 2', par2='Param 2.2')
     VAL3 = Choices.Choice('Value 3', par1='Param 3.1', par2='Param 3.2')
+
+    SUBSET = Choices.Subset(VAL1, VAL3)
 
 print( CONST.extract('par1') )
 # ('Param 1.1', None, 'Param 3.1')
@@ -138,6 +140,12 @@ print( CONST.extract('value', 'par1') )
 
 print( CONST.extract('value', 'par1', with_keys=True) )
 # (('VAL1', ('val1', 'Param 1.1')), ('VAL2', ('val2', None)), ('VAL3', ('val3', 'Param 3.1')))
+
+print( CONST.SUBSET.extract('value') )
+# ('val1', 'val3')
+
+print( CONST.SUBSET.extract('value', 'display', 'par2') )
+# (('val1', 'Value 1', None), ('val3', 'Value 3', 'Param 3.2'))
 ```
 
 ## Tests

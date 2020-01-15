@@ -118,6 +118,16 @@ class TestCase(unittest.TestCase):
         )
         self.assertTupleEqual(
             (
+                ('VAL1', 'Display 1'),
+                ('VAL2', 'Display 2'),
+                ('VAL3', 'Display 3'),
+                ('VAL4', 'Display 4'),
+                ('VAL5', 'Display 5'),
+            ),
+            self.CONST.extract('display', with_keys=True)
+        )
+        self.assertTupleEqual(
+            (
                 ('VAL1', ('val1', None, None)),
                 ('VAL2', ('val2', None, None)),
                 ('VAL3', ('value-3', None, None)),
@@ -125,6 +135,19 @@ class TestCase(unittest.TestCase):
                 ('VAL5', ('val5', 'Param 5.1', 'Param 5.2')),
             ),
             self.CONST.extract('value', 'param1', 'param2', with_keys=True)
+        )
+
+        self.assertTupleEqual(
+            ('val1', 'val2', 'value-3'),
+            self.CONST.SUBSET.extract('value')
+        )
+        self.assertTupleEqual(
+            (
+                ('val1', 'Display 1'),
+                ('val2', 'Display 2'),
+                ('value-3', 'Display 3'),
+            ),
+            self.CONST.SUBSET.extract('value', 'display')
         )
 
 
