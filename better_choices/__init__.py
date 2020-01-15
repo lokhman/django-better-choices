@@ -39,7 +39,7 @@ class Choices(metaclass=__ChoicesMetaclass):
 
     Example:
         # init via class definition
-        class ORDER_STATUS(Choices):
+        class STATUSES(Choices):
             CREATED = 'Created'
             PENDING = Choices.Choice('Pending', help_text='This set status to pending')
             ON_HOLD = Choices.Choice('On Hold', value='custom_on_hold')
@@ -51,47 +51,47 @@ class Choices(metaclass=__ChoicesMetaclass):
                 REVIEW = 'On Review'
 
         # init via inline definition
-        ORDER_STATUS = Choices('ORDER_STATUS', SUCCESS='Success', FAIL='Error')
+        STATUSES = Choices('STATUSES', SUCCESS='Success', FAIL='Error')
 
         # choice accessors
-        choice_created = ORDER_STATUS.CREATED
-        choice_on_hold = ORDER_STATUS['ON_HOLD']
+        choice_created = STATUSES.CREATED
+        choice_on_hold = STATUSES['ON_HOLD']
 
         # choice parameters and inner choice accessors
-        print( ORDER_STATUS.CREATED.value )             # 'created'
-        print( ORDER_STATUS.ON_HOLD.value )             # 'custom_on_hold'
-        print( ORDER_STATUS.PENDING.display )           # 'Pending'
-        print( ORDER_STATUS.PENDING.help_text )         # 'This set status to pending'
-        print( ORDER_STATUS.INTERNAL_STATUS.REVIEW )    # 'review'
+        print( STATUSES.CREATED.value )             # 'created'
+        print( STATUSES.ON_HOLD.value )             # 'custom_on_hold'
+        print( STATUSES.PENDING.display )           # 'Pending'
+        print( STATUSES.PENDING.help_text )         # 'This set status to pending'
+        print( STATUSES.INTERNAL_STATUS.REVIEW )    # 'review'
 
         # search in choices
-        'created' in ORDER_STATUS                       # True
-        'custom_on_hold' in ORDER_STATUS                # True
-        'on_hold' in ORDER_STATUS                       # False
-        key, choice = ORDER_STATUS.find('created')      # ('CREATED', Choices.Choice)
+        'created' in STATUSES                       # True
+        'custom_on_hold' in STATUSES                # True
+        'on_hold' in STATUSES                       # False
+        key, choice = STATUSES.find('created')      # ('CREATED', Choices.Choice)
 
         # search in subsets
-        'custom_on_hold' in ORDER_STATUS.VALID          # True
-        ORDER_STATUS.CREATED in ORDER_STATUS.VALID      # True
+        'custom_on_hold' in STATUSES.VALID          # True
+        STATUSES.CREATED in STATUSES.VALID          # True
 
         # choices iteration
-        for value, display in ORDER_STATUS:
+        for value, display in STATUSES:
             print( value, display )
-        for key, choice in ORDER_STATUS.items():
+        for key, choice in STATUSES.items():
             print( key, choice.value, choice.display )
-        for key in ORDER_STATUS.keys():
+        for key in STATUSES.keys():
             print( key )
-        for choice in ORDER_STATUS.choices():
+        for choice in STATUSES.choices():
             print( choice.value, choice.display )
 
         # Django model fields
-        class Order(models.Model):
-            status = models.CharField(choices=ORDER_STATUS, default=ORDER_STATUS.CREATED)
+        class MyModel(models.Model):
+            status = models.CharField(choices=STATUSES, default=STATUSES.CREATED)
 
         # saving choices on models
-        order = Order.objects.get(pk=1)
-        order.status = ORDER_STATUS.PENDING
-        order.save()
+        model = MyModel.objects.get(pk=1)
+        model.status = STATUSES.PENDING
+        model.save()
     """
 
     @dataclass(init=False, frozen=True)

@@ -22,7 +22,7 @@ from better_choices import Choices
 ### Class definition
 The choices can be defined with overriding `Choices` class.
 ```python
-class ORDER_STATUS(Choices):
+class STATUSES(Choices):
     CREATED = 'Created'
     PENDING = Choices.Choice('Pending', help_text='This set status to pending')
     ON_HOLD = Choices.Choice('On Hold', value='custom_on_hold')
@@ -37,7 +37,7 @@ class ORDER_STATUS(Choices):
 ### Inline definition
 Alternatively, the choices can be defined dynamically by creating new `Choices` object.
 ```python
-ORDER_STATUS = Choices('PAYMENT_STATUS', SUCCESS='Success', FAIL='Error')
+STATUSES = Choices('STATUSES', SUCCESS='Success', FAIL='Error')
 ```
 > The first `name` parameter of `Choices` constructor is optional and required only for better representation
 > of the returned object.
@@ -45,19 +45,19 @@ ORDER_STATUS = Choices('PAYMENT_STATUS', SUCCESS='Success', FAIL='Error')
 ### Choice accessors
 You can access choices with dot and square-brackets notation.
 ```python
-choice_created = ORDER_STATUS.CREATED
-choice_on_hold = ORDER_STATUS['ON_HOLD']
+choice_created = STATUSES.CREATED
+choice_on_hold = STATUSES['ON_HOLD']
 ```
 
 ### Choice parameters and inner choice accessors
 By default, every choice has `value` and `display` parameters. Any other additional parameters can be specified
 in `Choices.Choice` constructor (see class definition example).
 ```python
-print( ORDER_STATUS.CREATED.value )             # 'created'
-print( ORDER_STATUS.ON_HOLD.value )             # 'custom_on_hold'
-print( ORDER_STATUS.PENDING.display )           # 'Pending'
-print( ORDER_STATUS.PENDING.help_text )         # 'This set status to pending'
-print( ORDER_STATUS.INTERNAL_STATUS.REVIEW )    # 'review'
+print( STATUSES.CREATED.value )             # 'created'
+print( STATUSES.ON_HOLD.value )             # 'custom_on_hold'
+print( STATUSES.PENDING.display )           # 'Pending'
+print( STATUSES.PENDING.help_text )         # 'This set status to pending'
+print( STATUSES.INTERNAL_STATUS.REVIEW )    # 'review'
 ```
 > Every `Choices.Choice` object has a defined string representation of a `value` of the choice.
 > `Choices.Choice` is a frozen data class, which object cannot be legally modified after the definition.
@@ -65,18 +65,18 @@ print( ORDER_STATUS.INTERNAL_STATUS.REVIEW )    # 'review'
 ### Search in choices
 Search in choices is performed by choice `value`.
 ```python
-'created' in ORDER_STATUS                       # True
-'custom_on_hold' in ORDER_STATUS                # True
-'on_hold' in ORDER_STATUS                       # False
-key, choice = ORDER_STATUS.find('created')      # ('CREATED', Choices.Choice)
+'created' in STATUSES                       # True
+'custom_on_hold' in STATUSES                # True
+'on_hold' in STATUSES                       # False
+key, choice = STATUSES.find('created')      # ('CREATED', Choices.Choice)
 ```
 
 ### Search in subsets
 Subsets are used to group several choices together (see class definition example) and perform search by a specific
 choice or choice `value`.
 ```python
-'custom_on_hold' in ORDER_STATUS.VALID          # True
-ORDER_STATUS.CREATED in ORDER_STATUS.VALID      # True
+'custom_on_hold' in STATUSES.VALID          # True
+STATUSES.CREATED in STATUSES.VALID          # True
 ```
 > `Choices.Subset` is a `frozenset` that cannot be modified after the definition.
 
@@ -84,33 +84,33 @@ ORDER_STATUS.CREATED in ORDER_STATUS.VALID      # True
 Choices class implements `__iter__` magic method, hence choices are iterable and return a tuple of `(value, display)`.
 Methods `items`, `keys` and `choices` can be used to return tuples of keys and choices combinations.
 ```python
-for value, display in ORDER_STATUS:
+for value, display in STATUSES:
     print( value, display )
 
-for key, choice in ORDER_STATUS.items():
+for key, choice in STATUSES.items():
     print( key, choice.value, choice.display )
 
-for key in ORDER_STATUS.keys():
+for key in STATUSES.keys():
     print( key )
 
-for choice in ORDER_STATUS.choices():
+for choice in STATUSES.choices():
     print( choice.value, choice.display )
 ```
 
 ### Django model fields
 Better choices are not different to the original Django choices in terms of usage in models.
 ```python
-class Order(models.Model):
-    status = models.CharField(choices=ORDER_STATUS, default=ORDER_STATUS.CREATED)
+class MyModel(models.Model):
+    status = models.CharField(choices=STATUSES, default=STATUSES.CREATED)
 ```
 > Better choices are fully supported by Django migrations.
 
 ### Saving choices on models
 Better choices are compatible with standard Django models manipulation.
 ```python
-order = Order.objects.get(pk=1)
-order.status = ORDER_STATUS.PENDING
-order.save()
+model = MyModel.objects.get(pk=1)
+model.status = STATUSES.PENDING
+model.save()
 ```
 
 ### Parameter extraction
