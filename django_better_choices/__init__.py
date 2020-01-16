@@ -1,7 +1,7 @@
 """Better choices library for Django web framework."""
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, Optional, Tuple, Union
 
 try:
     from django.utils.functional import Promise
@@ -16,14 +16,14 @@ class __ChoicesMetaclass(type):
     def __contains__(self, value: str) -> bool:
         return self.find(value) is not None
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[str, Union[str, Promise]]]:
         for choice in self.choices():
             yield choice.value, choice.display
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'{self.__name__}({self.__str_kwargs()})'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'Choices({self.__name__!r}, {self.__str_kwargs()})'
 
     def __str_kwargs(self) -> str:
@@ -122,7 +122,7 @@ class Choices(metaclass=__ChoicesMetaclass):
             for key, value in params.items():
                 object.__setattr__(self, key, value)
 
-        def __hash__(self):
+        def __hash__(self) -> int:
             return super().__hash__()
 
         def __eq__(self, other: Any) -> bool:
@@ -141,7 +141,7 @@ class Choices(metaclass=__ChoicesMetaclass):
 
             See: https://docs.djangoproject.com/en/2.2/topics/migrations/#custom-deconstruct-method.
             """
-            return f'builtins.str', (self.__str__(),), {}
+            return 'builtins.str', (self.__str__(),), {}
 
     class Subset(tuple):
         """Immutable subset of choices that is easy to search by using Choice object or value."""
