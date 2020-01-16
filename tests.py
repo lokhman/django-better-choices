@@ -154,6 +154,12 @@ class TestCase(unittest.TestCase):
             self.CONST.SUBSET.extract('value', 'display')
         )
 
+    def test_deconstruct(self):
+        self.assertTupleEqual(
+            ('builtins.str', ('value-3',), {}),
+            self.CONST.VAL3.deconstruct()
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
