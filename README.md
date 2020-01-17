@@ -26,15 +26,15 @@ The choices can be defined with overriding `Choices` class.
 ```python
 class PAGE_STATUS(Choices):
     CREATED = 'Created'
-    PENDING = Choices.Choice('Pending', help_text='This set status to pending')
-    ON_HOLD = Choices.Choice('On Hold', value='custom_on_hold')
+    PENDING = Choices.Value('Pending', help_text='This set status to pending')
+    ON_HOLD = Choices.Value('On Hold', value='custom_on_hold')
 
     VALID = Choices.Subset('CREATED', ON_HOLD)
 
     class INTERNAL_STATUS(Choices):
         REVIEW = 'On Review'
 ```
-> Overridden choices class cannot be initialised.
+> Overridden choices classes cannot be initialised.
 
 ### Inline definition
 Alternatively, the choices can be defined dynamically by creating new `Choices` object.
@@ -44,68 +44,72 @@ PAGE_STATUS = Choices('PAGE_STATUS', SUCCESS='Success', FAIL='Error')
 > The first `name` parameter of `Choices` constructor is optional and required only for better representation
 > of the returned object.
 
-### Choice accessors
-You can access choices using dot notation and `getattr()`.
+### Value accessors
+You can access choices values using dot notation and with `getattr()`.
 ```python
 choice_created = PAGE_STATUS.CREATED
 choice_review = PAGE_STATUS.INTERNAL_STATUS.REVIEW
 choice_on_hold = getattr(PAGE_STATUS, 'ON_HOLD')
 ```
 
-### Choice parameters and inner choice accessors
-By default, every choice has `value` and `display` parameters. Any other additional parameters can be specified
-in `Choices.Choice` constructor (see class definition example).
+### Values and value parameters
+`Choices.Value` is a subclass of `str` and equals to its value. In addition to `display` parameter,
+other optional parameters can be specified in `Choices.Value` constructor (see class definition example).
 ```python
-print( PAGE_STATUS.CREATED.value )              # 'created'
-print( PAGE_STATUS.ON_HOLD.value )              # 'custom_on_hold'
-print( PAGE_STATUS.PENDING.display )            # 'Pending'
-print( PAGE_STATUS.PENDING.help_text )          # 'This set status to pending'
-print( PAGE_STATUS.PENDING )                    # 'pending'
-```
-> Every `Choices.Choice` object has a defined string representation of a `value` of the choice.
-> `Choices.Choice` is a frozen data class, which object cannot be legally modified after the definition.
+print( PAGE_STATUS.CREATED )                # 'created'
+print( PAGE_STATUS.ON_HOLD )                # 'custom_on_hold'
+print( PAGE_STATUS.PENDING.display )        # 'Pending'
+print( PAGE_STATUS.PENDING.help_text )      # 'This set status to pending'
+print( PAGE_STATUS.PENDING )                # 'pending'
 
-### Choice comparison
-Choices can be compared by the string `value` or by the `Choice` itself.
-```python
-PAGE_STATUS.ON_HOLD == 'custom_on_hold'         # True
-PAGE_STATUS.CREATED == PAGE_STATUS.CREATED      # True
+PAGE_STATUS.ON_HOLD == 'custom_on_hold'     # True
+PAGE_STATUS.CREATED == PAGE_STATUS.CREATED  # True
 ```
+> `Choices.Value` is an immutable string class, which object cannot be modified after initialisation.
+> Standard non-magic `str` methods are not supported in `Choices.Value`, in other cases its object behaves
+> like a normal string, e.g. `{'val1': 'something'}[CHOICES.VAL1] == 'something'`.
 
 ### Search in choices
-Search in choices is performed by choice `value`.
+Search in choices is performed by value.
 ```python
-'created' in PAGE_STATUS                        # True
-'custom_on_hold' in PAGE_STATUS                 # True
-'on_hold' in PAGE_STATUS                        # False
-choice = PAGE_STATUS['custom_on_hold']          # Choices.Choice
-key, choice = PAGE_STATUS.find('created')       # ('CREATED', Choices.Choice)
+'created' in PAGE_STATUS                    # True
+'custom_on_hold' in PAGE_STATUS             # True
+'on_hold' in PAGE_STATUS                    # False
+value = PAGE_STATUS['custom_on_hold']       # Choices.Value
+key, value = PAGE_STATUS.find('created')    # ('CREATED', Choices.Value)
 ```
 
 ### Search in subsets
-Subsets are used to group several choices together (see class definition example) and perform search by a specific
-choice or choice `value`.
+Subsets are used to group several values together (see class definition example) and search by a specific value.
 ```python
-'custom_on_hold' in PAGE_STATUS.VALID           # True
-PAGE_STATUS.CREATED in PAGE_STATUS.VALID        # True
+'custom_on_hold' in PAGE_STATUS.VALID       # True
+PAGE_STATUS.CREATED in PAGE_STATUS.VALID    # True
 ```
-> `Choices.Subset` is a subclass of `tuple` that cannot be modified after the definition.
+> `Choices.Subset` is a subclass of `tuple` that cannot be modified after initialisation.
 
 ### Choices iteration
-Choices class implements `__iter__` magic method, hence choices are iterable and return a tuple of `(value, display)`.
-Methods `items`, `keys` and `choices` can be used to return tuples of keys and choices combinations.
+Choices class implements `__iter__` magic method, hence values are iterable and return a tuple of `(value, display)`.
+Methods `items()`, `keys()`, `values()` can be used to return tuples of keys and values combinations.
 ```python
 for value, display in PAGE_STATUS:
     print( value, display )
 
-for key, choice in PAGE_STATUS.items():
-    print( key, choice.value, choice.display )
+for key, value in PAGE_STATUS.items():
+    print( key, value, value.display )
 
 for key in PAGE_STATUS.keys():
     print( key )
 
-for choice in PAGE_STATUS.choices():
-    print( choice.value, choice.display )
+for value in PAGE_STATUS.values():
+    print( value, choice.display )
+```
+Additional `displays()` method is provided for choices and subsets to extract `display` of the values.
+```python
+for display in PAGE_STATUS.displays():
+    print( display )
+
+for display in PAGE_STATUS.SUBSET.displays():
+    print( display )
 ```
 
 ### Django model fields
@@ -122,32 +126,6 @@ Better choices are compatible with standard Django models manipulation.
 page = Page.objects.get(pk=1)
 page.status = PAGE_STATUS.PENDING
 page.save()
-```
-
-### Parameter extraction
-The library provides handy `extract` methods to return specific parameters of the choices.
-```python
-class CONST(Choices):
-    VAL1 = Choices.Choice('Value 1', par1='Param 1.1')
-    VAL2 = Choices.Choice('Value 2', par2='Param 2.2')
-    VAL3 = Choices.Choice('Value 3', par1='Param 3.1', par2='Param 3.2')
-
-    SUBSET = Choices.Subset(VAL1, VAL3)
-
-print( CONST.extract('par1') )
-# ('Param 1.1', None, 'Param 3.1')
-
-print( CONST.extract('value', 'par1') )
-# (('val1', 'Param 1.1'), ('val2', None), ('val3', 'Param 3.1'))
-
-print( CONST.extract('value', 'par1', with_keys=True) )
-# (('VAL1', ('val1', 'Param 1.1')), ('VAL2', ('val2', None)), ('VAL3', ('val3', 'Param 3.1')))
-
-print( CONST.SUBSET.extract('value') )
-# ('val1', 'val3')
-
-print( CONST.SUBSET.extract('value', 'display', 'par2') )
-# (('val1', 'Value 1', None), ('val3', 'Value 3', 'Param 3.2'))
 ```
 
 ## Tests
