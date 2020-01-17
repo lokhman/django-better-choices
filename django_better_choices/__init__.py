@@ -1,6 +1,5 @@
 """Better choices library for Django web framework."""
 
-from dataclasses import dataclass
 from typing import Any, Dict, Iterator, Optional, Tuple, Union
 
 try:
@@ -97,43 +96,45 @@ class Choices(metaclass=__ChoicesMetaclass):
         page.save()
     """
 
-    @dataclass(init=False, frozen=True)
-    class Choice:
-        """Immutable data class that contains choice configuration."""
+    class Choice(str):
+        """Immutable string class that contains choice configuration."""
 
-        display: Union[str, Promise]
-        value: Optional[str]
+        capitalize = casefold = center = count = encode = endswith = expandtabs = find = format = format_map = \
+            index = isalnum = isalpha = isascii = isdecimal = isdigit = isidentifier = islower = isnumeric = \
+            isprintable = isspace = istitle = isupper = join = ljust = lower = lstrip = maketrans = partition = \
+            replace = rfind = rindex = rjust = rpartition = rsplit = rstrip = split = splitlines = startswith = \
+            strip = swapcase = title = translate = upper = zfill = property()
 
-        def __init__(self, display: Union[str, Promise], *, value: Optional[str] = None, **params: Any):
+        def __new__(cls, display: Union[str, Promise], *, value: str = '', **params: Any):
             """
-            Custom data class constructor to support nice syntax.
-
-            Note:
-                Frozen data classes can be modified only via `__setattr__` (even in the constructor).
+            Custom data class definition to support extended functionality.
 
             Args:
                 display (Union[str, Promise]): Text used to represent choice value.
-                value (Optional[str]): Overridden value of the choice (usually same as key).
+                value (str): Overridden value of the choice (usually same as key lowercase).
                 params: Additional choice parameters.
             """
-            params['display'] = display
-            params['value'] = value
+            self = super().__new__(cls, value)
+            self.__display = display
+            self.__params = params
+            return self
 
-            for key, value in params.items():
-                object.__setattr__(self, key, value)
+        def __getattr__(self, name: str) -> Any:
+            try:
+                return self.__params[name]
+            except KeyError:
+                raise AttributeError(f"'{self.__class__.__name__}' object has not attribute '{name}'") from None
 
-        def __hash__(self) -> int:
-            return super().__hash__()
+        def __clone__(self, value: str) -> 'Choices.Choice':
+            return self.__class__(self.__display, value=value, **self.__params)
 
-        def __eq__(self, other: Any) -> bool:
-            if isinstance(other, str):
-                return self.value == other
-            return super().__eq__(other)
+        @property
+        def value(self) -> str:
+            return self.__str__()
 
-        def __str__(self) -> str:
-            if self.value is None:
-                return ''
-            return self.value
+        @property
+        def display(self) -> Union[str, Promise]:
+            return self.__display
 
         def deconstruct(self) -> Tuple[str, Tuple[str, ...], Dict[str, Any]]:
             """
@@ -141,20 +142,17 @@ class Choices(metaclass=__ChoicesMetaclass):
 
             See: https://docs.djangoproject.com/en/2.2/topics/migrations/#custom-deconstruct-method.
             """
-            return 'builtins.str', (self.__str__(),), {}
+            return 'builtins.str', (self.value,), {}
 
     class Subset(tuple):
         """Immutable subset of choices that is easy to search by using Choice object or value."""
 
         def __new__(cls, *choices: Union['Choices.Choice', str]):
-            return super().__new__(cls, dict.fromkeys(choices).keys())
-
-        def __init__(self, *_: Union['Choices.Choice', str]):
+            self = super().__new__(cls, dict.fromkeys(choices).keys())
             self.__index = {c.value for c in self if isinstance(c, Choices.Choice)}
+            return self
 
         def __contains__(self, item: Union['Choices.Choice', str]) -> bool:
-            if isinstance(item, Choices.Choice):
-                return super().__contains__(item)
             return item in self.__index
 
         def extract(self, *params: str) -> Tuple[Any, ...]:
@@ -201,8 +199,9 @@ class Choices(metaclass=__ChoicesMetaclass):
                 continue
 
             if isinstance(choice, cls.Choice):
-                if choice.value is None:
-                    object.__setattr__(choice, 'value', key.lower())
+                if choice.value == '':
+                    choice = choice.__clone__(key.lower())
+                    setattr(cls, key, choice)
                 elif choice.value in cls.__index:
                     raise ValueError(f"choice '{cls.__name__}.{key}' has duplicated value: {choice.value!r}")
                 cls.__index[choice.value] = key
