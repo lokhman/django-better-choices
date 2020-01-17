@@ -8,7 +8,7 @@ class TestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.CONST = Choices(
-            # choices
+            # values
             VAL1='Display 1',
             VAL2=Choices.Value('Display 2'),
             VAL3=Choices.Value('Display 3', value='value-3'),

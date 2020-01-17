@@ -57,7 +57,6 @@ class Choices(metaclass=__ChoicesMetaclass):
         print( PAGE_STATUS.ON_HOLD )                # 'custom_on_hold'
         print( PAGE_STATUS.PENDING.display )        # 'Pending'
         print( PAGE_STATUS.PENDING.help_text )      # 'This set status to pending'
-        print( PAGE_STATUS.PENDING )                # 'pending'
 
         # values comparison
         PAGE_STATUS.ON_HOLD == 'custom_on_hold'     # True
@@ -82,7 +81,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         for key in PAGE_STATUS.keys():
             print( key )
         for value in PAGE_STATUS.values():
-            print( value, choice.display )
+            print( value, value.display )
         for display in PAGE_STATUS.displays():
             print( display )
         for display in PAGE_STATUS.SUBSET.displays():
