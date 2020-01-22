@@ -23,7 +23,7 @@ class __ChoicesMetaclass(type):
         return f"{self.__name__}({', '.join(self.keys())})"
 
     def __repr__(self) -> str:
-        kwargs = [f"'{self.__name__}'", *(f'{k}={v.display!r}' for k, v in self.items())]
+        kwargs = (f"'{self.__name__}'", *(f'{k}={v.display!r}' for k, v in self.items()))
         return f"Choices({', '.join(kwargs)})"
 
 
