@@ -95,6 +95,20 @@ class TestCase(unittest.TestCase):
         self.assertNotIn('val4', self.CONST.SUBSET)
         self.assertIn(self.CONST.VAL1, self.CONST.SUBSET)
 
+        self.assertTupleEqual(
+            (3, 0, 4, 2, 1),
+            tuple(map(self.CONST.index, ('val4', 'val1', 'val5', 'value-3', 'val2')))
+        )
+        with self.assertRaises(ValueError):
+            _ = self.CONST.index('val0')
+
+        self.assertTupleEqual(
+            (1, 2, 0),
+            tuple(map(self.CONST.SUBSET.index, ('val2', 'value-3', 'val1')))
+        )
+        with self.assertRaises(ValueError):
+            _ = self.CONST.SUBSET.index('val0')
+
     def test_iteration(self):
         self.assertTupleEqual(('VAL1', 'VAL2', 'VAL3', 'VAL4', 'VAL5'), self.CONST.keys())
         self.assertTupleEqual(('val1', 'val2', 'value-3', 'val4', 'val5'), self.CONST.values())
@@ -113,7 +127,7 @@ class TestCase(unittest.TestCase):
             list(self.CONST)
         )
 
-        self.assertTupleEqual(('val1', 'val2', 'value-3'), self.CONST.SUBSET)
+        self.assertTupleEqual(('val1', 'val2', 'value-3'), tuple(self.CONST.SUBSET))
         self.assertTupleEqual(('Display 1', 'Display 2', 'Display 3'), self.CONST.SUBSET.displays())
 
     def test_deconstruct(self):
