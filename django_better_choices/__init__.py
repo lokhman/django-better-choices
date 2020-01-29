@@ -144,7 +144,7 @@ class Choices(metaclass=__ChoicesMetaclass):
             return 'builtins.str', (self.__str__(),), {}
 
     class Subset(frozenset):
-        """Immutable subset of values that is easy to search."""
+        """Immutable subset of values that is easy to search by."""
 
         def __new__(cls, *values: str):
             self = super().__new__(cls, values)
