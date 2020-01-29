@@ -2,6 +2,8 @@
 
 from typing import Any, Dict, Iterator, Optional, Tuple, Union
 
+import warnings
+
 try:
     from django.utils.functional import Promise
 except ImportError:
@@ -68,7 +70,6 @@ class Choices(metaclass=__ChoicesMetaclass):
         'on_hold' in PAGE_STATUS                    # False
         value = PAGE_STATUS['custom_on_hold']       # Choices.Value
         key, value = PAGE_STATUS.find('created')    # ('CREATED', Choices.Value)
-        index = PAGE_STATUS.index('pending')        # 1
 
         # search in subsets
         'custom_on_hold' in PAGE_STATUS.VALID       # True
@@ -206,7 +207,14 @@ class Choices(metaclass=__ChoicesMetaclass):
 
     @classmethod
     def index(cls, value: str) -> int:
-        """Return first index of value."""
+        """
+        Return first index of value.
+
+        Note:
+            Will be deprecated and removed in 1.8
+        """
+        warnings.warn("call to deprecated function 'Choices.index'", DeprecationWarning)
+
         for i, _value in enumerate(cls.__values.values()):
             if value == _value:
                 return i

@@ -96,13 +96,6 @@ class TestCase(unittest.TestCase):
         self.assertIn(self.CONST.VAL1, self.CONST.SUBSET)
 
         self.assertTupleEqual(
-            (3, 0, 4, 2, 1),
-            tuple(map(self.CONST.index, ('val4', 'val1', 'val5', 'value-3', 'val2')))
-        )
-        with self.assertRaises(ValueError):
-            _ = self.CONST.index('val0')
-
-        self.assertTupleEqual(
             (1, 2, 0),
             tuple(map(self.CONST.SUBSET.index, ('val2', 'value-3', 'val1')))
         )

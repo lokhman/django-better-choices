@@ -76,7 +76,6 @@ Search in choices is performed by value.
 'on_hold' in PAGE_STATUS                    # False
 value = PAGE_STATUS['custom_on_hold']       # Choices.Value
 key, value = PAGE_STATUS.find('created')    # ('CREATED', Choices.Value)
-index = PAGE_STATUS.index('pending')        # 1
 ```
 
 ### Search in subsets
