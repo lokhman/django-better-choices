@@ -136,14 +136,6 @@ class Choices(metaclass=__ChoicesMetaclass):
         def display(self) -> str:
             return str(self.__display)
 
-        def deconstruct(self) -> Tuple[str, Tuple[str, ...], Dict[str, Any]]:
-            """
-            Django custom deconstruction method to be supported in model fields.
-
-            See: https://docs.djangoproject.com/en/2.2/topics/migrations/#custom-deconstruct-method.
-            """
-            return 'builtins.str', (self.__str__(),), {}
-
     class Subset(frozenset):
         """Immutable subset of values that is easy to search by."""
 

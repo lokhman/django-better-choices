@@ -123,12 +123,6 @@ class TestCase(unittest.TestCase):
         self.assertTupleEqual(('val1', 'val2', 'value-3'), tuple(self.CONST.SUBSET))
         self.assertTupleEqual(('Display 1', 'Display 2', 'Display 3'), self.CONST.SUBSET.displays())
 
-    def test_deconstruct(self):
-        self.assertTupleEqual(
-            ('builtins.str', ('value-3',), {}),
-            self.CONST.VAL3.deconstruct()
-        )
-
 
 if __name__ == '__main__':
     unittest.main()
