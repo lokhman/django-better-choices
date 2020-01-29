@@ -76,6 +76,7 @@ Search in choices is performed by value.
 'on_hold' in PAGE_STATUS                    # False
 value = PAGE_STATUS['custom_on_hold']       # Choices.Value
 key, value = PAGE_STATUS.find('created')    # ('CREATED', Choices.Value)
+index = PAGE_STATUS.index('pending')        # 1
 ```
 
 ### Search in subsets
@@ -83,8 +84,10 @@ Subsets are used to group several values together (see class definition example)
 ```python
 'custom_on_hold' in PAGE_STATUS.VALID       # True
 PAGE_STATUS.CREATED in PAGE_STATUS.VALID    # True
+index = PAGE_STATUS.VALID.index('created')  # 0
 ```
-> `Choices.Subset` is a subclass of `tuple` that cannot be modified after initialisation.
+> `Choices.Subset` is a subclass of `frozetset`, which cannot be modified after initialisation.
+> Unlike original Python sets, instances of `Choices.Subset` maintain the order of values.
 
 ### Choices iteration
 Choices class implements `__iter__` magic method, hence choices are iterable that yield `(value, display)`.
