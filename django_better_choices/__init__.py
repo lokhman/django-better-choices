@@ -68,10 +68,12 @@ class Choices(metaclass=__ChoicesMetaclass):
         'on_hold' in PAGE_STATUS                    # False
         value = PAGE_STATUS['custom_on_hold']       # Choices.Value
         key, value = PAGE_STATUS.find('created')    # ('CREATED', Choices.Value)
+        index = PAGE_STATUS.index('pending')        # 1
 
         # search in subsets
         'custom_on_hold' in PAGE_STATUS.VALID       # True
         PAGE_STATUS.CREATED in PAGE_STATUS.VALID    # True
+        index = PAGE_STATUS.VALID.index('created')  # 0
 
         # choices iteration
         for value, display in PAGE_STATUS:
@@ -141,20 +143,27 @@ class Choices(metaclass=__ChoicesMetaclass):
             """
             return 'builtins.str', (self.__str__(),), {}
 
-    class Subset(tuple):
+    class Subset(frozenset):
         """Immutable subset of values that is easy to search."""
 
         def __new__(cls, *values: str):
-            self = super().__new__(cls, dict.fromkeys(values).keys())
-            self.__index = {v for v in self if isinstance(v, Choices.Value)}
+            self = super().__new__(cls, values)
+            self.__index = {v: values.index(v) for v in values}
             return self
 
-        def __contains__(self, value: str) -> bool:
-            return value in self.__index
+        def __iter__(self) -> Iterator[str]:
+            yield from self.__index.keys()
+
+        def index(self, value: str) -> int:
+            """Return first index of value."""
+            try:
+                return self.__index[value]
+            except KeyError:
+                raise ValueError(f'{value!r} is not in subset') from None
 
         def displays(self) -> Tuple[str, ...]:
             """Return tuple of displays of subset values."""
-            return tuple(v.display for v in self)
+            return tuple(v.display for v in self if isinstance(v, Choices.Value))
 
     def __new__(cls, name: Optional[str] = None, **values: Union['Value', str, Promise]):
         if cls != Choices:
@@ -194,6 +203,14 @@ class Choices(metaclass=__ChoicesMetaclass):
 
     def __class_getitem__(cls, value: str) -> 'Value':
         return cls.__values[cls.__keys[value]]
+
+    @classmethod
+    def index(cls, value: str) -> int:
+        """Return first index of value."""
+        for i, _value in enumerate(cls.__values.values()):
+            if value == _value:
+                return i
+        raise ValueError(f'{value!r} is not in {cls.__name__}')
 
     @classmethod
     def items(cls) -> Tuple[Tuple[str, 'Value'], ...]:
