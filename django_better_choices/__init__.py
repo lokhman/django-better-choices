@@ -1,8 +1,6 @@
 """Better choices library for Django web framework."""
 
-from typing import Any, Dict, Iterator, Optional, Tuple, Union
-
-import warnings
+from typing import Any, Iterator, Optional, Tuple, Union
 
 try:
     from django.utils.functional import Promise
@@ -196,21 +194,6 @@ class Choices(metaclass=__ChoicesMetaclass):
 
     def __class_getitem__(cls, value: str) -> 'Value':
         return cls.__values[cls.__keys[value]]
-
-    @classmethod
-    def index(cls, value: str) -> int:
-        """
-        Return first index of value.
-
-        Note:
-            Will be deprecated and removed in 1.8
-        """
-        warnings.warn("call to deprecated function 'Choices.index'", DeprecationWarning)
-
-        for i, _value in enumerate(cls.__values.values()):
-            if value == _value:
-                return i
-        raise ValueError(f'{value!r} is not in {cls.__name__}')
 
     @classmethod
     def items(cls) -> Tuple[Tuple[str, 'Value'], ...]:
