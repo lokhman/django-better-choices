@@ -29,7 +29,7 @@ class PAGE_STATUS(Choices):
     PENDING = Choices.Value('Pending', help_text='This set status to pending')
     ON_HOLD = Choices.Value('On Hold', value='custom_on_hold')
 
-    VALID = Choices.Subset('CREATED', ON_HOLD)
+    VALID = Choices.Subset('CREATED', 'ON_HOLD')
 
     class INTERNAL_STATUS(Choices):
         REVIEW = 'On Review'
@@ -83,10 +83,8 @@ Subsets are used to group several values together (see class definition example)
 ```python
 'custom_on_hold' in PAGE_STATUS.VALID       # True
 PAGE_STATUS.CREATED in PAGE_STATUS.VALID    # True
-index = PAGE_STATUS.VALID.index('created')  # 0
 ```
-> `Choices.Subset` is a subclass of `frozetset`, which cannot be modified after initialisation.
-> Unlike original Python sets, instances of `Choices.Subset` maintain the order of values.
+> `Choices.Subset` is a subclass of `tuple`, which is translated to inner choices class after definition.
 
 ### Choices iteration
 Choices class implements `__iter__` magic method, hence choices are iterable that yield `(value, display)`.
