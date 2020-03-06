@@ -38,7 +38,7 @@ class Choices(metaclass=__ChoicesMetaclass):
             PENDING = Choices.Value('Pending', help_text='This set status to pending')
             ON_HOLD = Choices.Value('On Hold', value='custom_on_hold')
 
-            VALID = Choices.Subset('CREATED', ON_HOLD)
+            VALID = Choices.Subset('CREATED', 'ON_HOLD')
 
             # supports inner choices
             class INTERNAL_STATUS(Choices):
@@ -72,7 +72,6 @@ class Choices(metaclass=__ChoicesMetaclass):
         # search in subsets
         'custom_on_hold' in PAGE_STATUS.VALID       # True
         PAGE_STATUS.CREATED in PAGE_STATUS.VALID    # True
-        index = PAGE_STATUS.VALID.index('created')  # 0
 
         # choices iteration
         for value, display in PAGE_STATUS:
@@ -134,27 +133,14 @@ class Choices(metaclass=__ChoicesMetaclass):
         def display(self) -> str:
             return str(self.__display)
 
-    class Subset(frozenset):
-        """Immutable subset of values that is easy to search by."""
+    class Subset(tuple):
+        """Immutable subset of values, which is translated to inner choices class."""
 
         def __new__(cls, *values: str):
-            self = super().__new__(cls, values)
-            self.__index = {v: values.index(v) for v in values}
-            return self
+            return super().__new__(cls, dict.fromkeys(values).keys())
 
-        def __iter__(self) -> Iterator[str]:
-            yield from self.__index.keys()
-
-        def index(self, value: str) -> int:
-            """Return first index of value."""
-            try:
-                return self.__index[value]
-            except KeyError:
-                raise ValueError(f'{value!r} is not in subset') from None
-
-        def displays(self) -> Tuple[str, ...]:
-            """Return tuple of displays of subset values."""
-            return tuple(v.display for v in self if isinstance(v, Choices.Value))
+        def __getattr__(self, _: str) -> Any:
+            """Make IDE happy."""
 
     def __new__(cls, name: Optional[str] = None, **values: Union['Value', str, Promise]):
         if cls != Choices:
@@ -187,13 +173,18 @@ class Choices(metaclass=__ChoicesMetaclass):
                 cls.__keys[value] = key
                 cls.__values[key] = value
             elif isinstance(value, cls.Subset):
-                value = cls.Subset(*map(lambda v: v if isinstance(v, cls.Value) else getattr(cls, v), value))
-                setattr(cls, key, value)
+                setattr(cls, key, type(f'{cls.__name__}.{key}', (cls,), {k: cls.__values[k] for k in value}))
             else:
                 raise TypeError(f"choices key '{cls.__name__}.{key}' has invalid value type: '{type(value).__name__}'")
 
     def __class_getitem__(cls, value: str) -> 'Value':
         return cls.__values[cls.__keys[value]]
+
+    def __getattr__(self, _: str) -> Any:
+        """Make IDE happy for inline definition."""
+
+    def __iter__(self) -> 'Value':
+        """Make IDE happy for inline definition."""
 
     @classmethod
     def items(cls) -> Tuple[Tuple[str, 'Value'], ...]:
