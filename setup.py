@@ -1,6 +1,6 @@
 import setuptools
 
-kwargs = {'version': '1.8'}
+kwargs = {'version': '1.9'}
 
 with open('README.md', 'r') as f:
     kwargs['long_description'] = f.read()
