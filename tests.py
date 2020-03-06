@@ -5,33 +5,37 @@ from django_better_choices import Choices
 
 
 class TestCase(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.CONST = Choices(
-            # values
-            VAL1='Display 1',
-            VAL2=Choices.Value('Display 2'),
-            VAL3=Choices.Value('Display 3', value='value-3'),
-            VAL4=Choices.Value('Display 4', param1='Param 4.1'),
-            VAL5=Choices.Value('Display 5', param1='Param 5.1', param2='Param 5.2'),
-            # subsets
-            SUBSET=Choices.Subset('VAL1', 'VAL2', 'VAL3'),
-            # nested choices
-            NESTED=Choices('NESTED', VAL10='Display 10', VAL20='Display 20')
-        )
+    class CONST(Choices):
+        # values
+        VAL1 = 'Display 1'
+        VAL2 = Choices.Value('Display 2')
+        VAL3 = Choices.Value('Display 3', value='value-3')
+        VAL4 = Choices.Value('Display 4', param1='Param 4.1')
+        VAL5 = Choices.Value('Display 5', param1='Param 5.1', param2='Param 5.2')
+
+        # subsets
+        SUBSET = Choices.Subset('VAL1', 'VAL2', 'VAL3')
+
+        # nested choices
+        class NESTED(Choices):
+            VAL10 = 'Display 10'
+            VAL20 = 'Display 20'
 
     def test_init(self):
-        class LOCAL(Choices):
-            VAL1 = 'Display 1'
-            VAL2 = Choices.Value('Display 2')
-            SUBSET = Choices.Subset('VAL1', VAL2)
+        LOCAL = Choices(
+            VAL1='Display 1',
+            VAL2=Choices.Value('Display 2'),
+            SUBSET=Choices.Subset('VAL1', 'VAL2', 'VAL1'),
+        )
 
-        self.assertEqual('Choices', self.CONST.__name__)
+        self.assertEqual('CONST', self.CONST.__name__)
         self.assertEqual('CONST_NAME', Choices('CONST_NAME').__name__)
-        self.assertEqual('LOCAL', LOCAL.__name__)
+        self.assertEqual('CONST.SUBSET', self.CONST.SUBSET.__name__)
+        self.assertEqual('Choices', LOCAL.__name__)
 
-        self.assertEqual("LOCAL(VAL1, VAL2)", str(LOCAL))
-        self.assertEqual("Choices('LOCAL', VAL1='Display 1', VAL2='Display 2')", repr(LOCAL))
+        self.assertEqual('Choices(VAL1, VAL2)', str(LOCAL))
+        self.assertEqual("Choices('Choices', VAL1='Display 1', VAL2='Display 2')", repr(LOCAL))
+        self.assertEqual('Choices.SUBSET(VAL1, VAL2)', str(LOCAL.SUBSET))
         self.assertEqual("Choices('TEST')", repr(Choices('TEST')))
 
         self.assertEqual('val1', LOCAL.VAL1)
@@ -50,10 +54,10 @@ class TestCase(unittest.TestCase):
         with self.assertRaises(ValueError):  # duplicated value
             Choices(VAL1='Display 1', VAL2=Choices.Value('Display 2', value='val1'))
 
-        with self.assertRaises(AttributeError):  # invalid subset key
+        with self.assertRaises(KeyError):  # invalid subset key
             Choices(SUBSET=Choices.Subset('VAL1'))
 
-        with self.assertRaises(AttributeError):  # invalid subset key reference
+        with self.assertRaises(KeyError):  # invalid subset key reference
             class _(Choices):
                 VAL1 = 'Display 1'
                 SUBSET = Choices.Subset(VAL1)
@@ -95,13 +99,6 @@ class TestCase(unittest.TestCase):
         self.assertNotIn('val4', self.CONST.SUBSET)
         self.assertIn(self.CONST.VAL1, self.CONST.SUBSET)
 
-        self.assertTupleEqual(
-            (1, 2, 0),
-            tuple(map(self.CONST.SUBSET.index, ('val2', 'value-3', 'val1')))
-        )
-        with self.assertRaises(ValueError):
-            _ = self.CONST.SUBSET.index('val0')
-
     def test_iteration(self):
         self.assertTupleEqual(('VAL1', 'VAL2', 'VAL3', 'VAL4', 'VAL5'), self.CONST.keys())
         self.assertTupleEqual(('val1', 'val2', 'value-3', 'val4', 'val5'), self.CONST.values())
@@ -109,18 +106,33 @@ class TestCase(unittest.TestCase):
         self.assertTupleEqual(('Display 1', 'Display 2', 'Display 3', 'Display 4', 'Display 5'), self.CONST.displays())
 
         self.assertIsInstance(self.CONST, Iterable)
-        self.assertListEqual(
-            [
+        self.assertTupleEqual(
+            (
                 ('val1', 'Display 1'),
                 ('val2', 'Display 2'),
                 ('value-3', 'Display 3'),
                 ('val4', 'Display 4'),
                 ('val5', 'Display 5'),
-            ],
-            list(self.CONST)
+            ),
+            tuple(self.CONST)
         )
 
-        self.assertTupleEqual(('val1', 'val2', 'value-3'), tuple(self.CONST.SUBSET))
+        self.assertTupleEqual(
+            (
+                ('val1', 'Display 1'),
+                ('val2', 'Display 2'),
+                ('value-3', 'Display 3'),
+            ),
+            tuple(self.CONST.SUBSET)
+        )
+
+        self.assertTupleEqual(('VAL1', 'VAL2', 'VAL3'), self.CONST.SUBSET.keys())
+        self.assertTupleEqual(('val1', 'val2', 'value-3'), self.CONST.SUBSET.values())
+        self.assertTupleEqual(
+            tuple(zip(self.CONST.SUBSET.keys(), self.CONST.SUBSET.values())),
+            self.CONST.SUBSET.items()
+        )
+
         self.assertTupleEqual(('Display 1', 'Display 2', 'Display 3'), self.CONST.SUBSET.displays())
 
 
