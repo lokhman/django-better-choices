@@ -73,6 +73,10 @@ class Choices(metaclass=__ChoicesMetaclass):
         'custom_on_hold' in PAGE_STATUS.VALID       # True
         PAGE_STATUS.CREATED in PAGE_STATUS.VALID    # True
 
+        # extract subset
+        PAGE_STATUS.extract('CREATED', 'ON_HOLD')   # ~= PAGE_STATUS.VALID
+        PAGE_STATUS.VALID.extract('ON_HOLD')        # Choices('PAGE_STATUS.VALID.Subset', ON_HOLD)
+
         # choices iteration
         for value, display in PAGE_STATUS:
             print( value, display )
@@ -136,14 +140,14 @@ class Choices(metaclass=__ChoicesMetaclass):
     class Subset(tuple):
         """Immutable subset of values, which is translated to inner choices class."""
 
-        def __new__(cls, *values: str):
-            return super().__new__(cls, dict.fromkeys(values).keys())
+        def __new__(cls, *keys: str):
+            return super().__new__(cls, dict.fromkeys(keys).keys())
 
         def __getattr__(self, _: str) -> Any:
             """Make IDE happy."""
 
     def __new__(cls, name: Optional[str] = None, **values: Union['Value', str, Promise]):
-        if cls != Choices:
+        if cls is not Choices:
             raise RuntimeError(f"choices object '{cls.__name__}' cannot be initialized")
         if name is None:
             name = cls.__name__
@@ -173,7 +177,7 @@ class Choices(metaclass=__ChoicesMetaclass):
                 cls.__keys[value] = key
                 cls.__values[key] = value
             elif isinstance(value, cls.Subset):
-                setattr(cls, key, type(f'{cls.__name__}.{key}', (cls,), {k: cls.__values[k] for k in value}))
+                setattr(cls, key, cls.extract(*value, name=key))
             else:
                 raise TypeError(f"choices key '{cls.__name__}.{key}' has invalid value type: '{type(value).__name__}'")
 
@@ -214,3 +218,8 @@ class Choices(metaclass=__ChoicesMetaclass):
         except KeyError:
             return None
         return key, cls.__values[key]
+
+    @classmethod
+    def extract(cls, *keys: str, name='Subset') -> 'Choices':
+        """Dynamically extract a subset of values from the choices class."""
+        return type(f'{cls.__name__}.{name}', (cls,), {k: cls.__values[k] for k in keys})
