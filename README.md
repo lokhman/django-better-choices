@@ -36,9 +36,11 @@ class PAGE_STATUS(Choices):
 
     @classmethod
     def get_help_text(cls):
-        for value in cls.values():
-            if hasattr(value, 'help_text'):
-                yield value.help_text
+        return tuple(
+            value.help_text
+            for value in cls.values()
+            if hasattr(value, 'help_text')
+        )
 ```
 > Overridden choices classes cannot be initialised.
 
@@ -108,7 +110,7 @@ for key in PAGE_STATUS.keys():
     print( key )
 
 for value in PAGE_STATUS.values():
-    print( value, value.display )
+    print( value, value.display, value.__choice_entry__ )
 ```
 Additional `displays()` method is provided for choices and subsets to extract values display strings.
 ```python

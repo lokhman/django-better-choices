@@ -85,7 +85,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         for key in PAGE_STATUS.keys():
             print( key )
         for value in PAGE_STATUS.values():
-            print( value, value.display )
+            print( value, value.display, value.__choice_entry__ )
         for display in PAGE_STATUS.displays():
             print( display )
         for display in PAGE_STATUS.SUBSET.displays():
