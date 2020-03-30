@@ -33,6 +33,12 @@ class PAGE_STATUS(Choices):
 
     class INTERNAL_STATUS(Choices):
         REVIEW = 'On Review'
+
+    @classmethod
+    def get_help_text(cls):
+        for value in cls.values():
+            if hasattr(value, 'help_text'):
+                yield value.help_text
 ```
 > Overridden choices classes cannot be initialised.
 
@@ -41,8 +47,7 @@ Alternatively, the choices can be defined dynamically by creating new `Choices` 
 ```python
 PAGE_STATUS = Choices('PAGE_STATUS', SUCCESS='Success', FAIL='Error')
 ```
-> The first `name` parameter of `Choices` constructor is optional and required only for better representation
-> of the returned object.
+> The first `name` parameter of `Choices` constructor is optional and required only for better representation of the returned object.
 
 ### Value accessors
 You can access choices values using dot notation and with `getattr()`.
@@ -53,8 +58,7 @@ value_on_hold = getattr(PAGE_STATUS, 'ON_HOLD')
 ```
 
 ### Values and value parameters
-`Choices.Value` is a subclass of `str` and equals to its value. In addition to `display` parameter,
-other optional parameters can be specified in `Choices.Value` constructor (see class definition example).
+`Choices.Value` is a subclass of `str` and equals to its value. In addition to `display` parameter, other optional parameters can be specified in `Choices.Value` constructor (see class definition example).
 ```python
 print( PAGE_STATUS.CREATED )                # 'created'
 print( PAGE_STATUS.ON_HOLD )                # 'custom_on_hold'
@@ -64,9 +68,7 @@ print( PAGE_STATUS.PENDING.help_text )      # 'This set status to pending'
 PAGE_STATUS.ON_HOLD == 'custom_on_hold'     # True
 PAGE_STATUS.CREATED == PAGE_STATUS.CREATED  # True
 ```
-> `Choices.Value` is an immutable string class, which object cannot be modified after initialisation.
-> Standard non-magic `str` methods are not supported in `Choices.Value`, in other cases its object behaves
-> like a normal string, e.g. `{'val1': 'something'}[CHOICES.VAL1] == 'something'`.
+> `Choices.Value` is an immutable string class, which object cannot be modified after initialisation. Standard non-magic `str` methods are not supported in `Choices.Value`, in other cases its object behaves like a normal string, e.g. `{'val1': 'something'}[CHOICES.VAL1] == 'something'`.
 
 ### Search in choices
 Search in choices is performed by value.
@@ -84,11 +86,17 @@ Subsets are used to group several values together (see class definition example)
 'custom_on_hold' in PAGE_STATUS.VALID       # True
 PAGE_STATUS.CREATED in PAGE_STATUS.VALID    # True
 ```
-> `Choices.Subset` is a subclass of `tuple`, which is translated to inner choices class after definition.
+> `Choices.Subset` is a subclass of `tuple`, which is translated to inner choices class after definition. All internal or custom choices class methods or properties will be available in a subset class (see "Custom methods" section).
+
+### Extract subset
+Subsets of choices can be dynamically extracted using a special `extract()` method.
+```python
+PAGE_STATUS.extract('CREATED', 'ON_HOLD')   # ~= PAGE_STATUS.VALID
+PAGE_STATUS.VALID.extract('ON_HOLD')        # Choices('PAGE_STATUS.VALID.Subset', ON_HOLD)
+```
 
 ### Choices iteration
-Choices class implements `__iter__` magic method, hence choices are iterable that yield `(value, display)`.
-Methods `items()`, `keys()` and `values()` can be used to return tuples of keys and values combinations.
+Choices class implements `__iter__` magic method, hence choices are iterable that yield `(value, display)`. Methods `items()`, `keys()` and `values()` can be used to return tuples of keys and values combinations.
 ```python
 for value, display in PAGE_STATUS:
     print( value, display )
@@ -109,6 +117,15 @@ for display in PAGE_STATUS.displays():
 
 for display in PAGE_STATUS.SUBSET.displays():
     print( display )
+```
+
+### Custom methods
+All custom choices class methods or properties (non-values) will be available in all subsets.
+```python
+PAGE_STATUS.get_help_text()
+PAGE_STATUS.VALID.get_help_text()
+PAGE.STATUS.extract('PENDING', 'ON_HOLD').get_help_text()
+PAGE.STATUS.VALID.extract('ON_HOLD').get_help_text()
 ```
 
 ### Django model fields
