@@ -17,7 +17,7 @@ class __ChoicesMetaclass(type):
 
     def __iter__(self) -> Iterator[Tuple[str, str]]:
         for value in self.values():
-            yield value.__str__(), value.display
+            yield value.__choice_entry__
 
     def __str__(self) -> str:
         return f"{self.__name__}({', '.join(self.keys())})"
@@ -132,6 +132,10 @@ class Choices(metaclass=__ChoicesMetaclass):
 
         def __clone__(self, value: str) -> 'Choices.Value':
             return self.__class__(self.__display, value=value, **self.__params)
+
+        @property
+        def __choice_entry__(self) -> Tuple[str, str]:
+            return self.__str__(), self.display
 
         @property
         def display(self) -> str:
