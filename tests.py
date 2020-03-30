@@ -135,6 +135,15 @@ class TestCase(unittest.TestCase):
 
         self.assertTupleEqual(('Display 1', 'Display 2', 'Display 3'), self.CONST.SUBSET.displays())
 
+    def test_extract(self):
+        choices_extract = self.CONST.extract('VAL2', 'VAL5')
+        self.assertEqual('CONST.Subset', choices_extract.__name__)
+        self.assertTupleEqual(('val2', 'val5'), choices_extract.values())
+
+        subset_extract = self.CONST.SUBSET.extract('VAL1', 'VAL3', name='SPECIAL')
+        self.assertEqual('CONST.SUBSET.SPECIAL', subset_extract.__name__)
+        self.assertTupleEqual(('val1', 'value-3'), subset_extract.values())
+
 
 if __name__ == '__main__':
     unittest.main()
