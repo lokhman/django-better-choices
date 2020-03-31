@@ -42,7 +42,7 @@ class PAGE_STATUS(Choices):
             if hasattr(value, 'help_text')
         )
 ```
-> Overridden choices classes cannot be initialised to obtain a new instance. Initialisation will return a tuple of choice entries (i.e. `(value, display)`).
+> Overridden choices classes cannot be initialised to obtain a new instance. Initialisation will return a tuple of choice entries.
 
 ### Inline definition
 Alternatively, the choices can be defined dynamically by creating new `Choices` object.
