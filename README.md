@@ -42,7 +42,7 @@ class PAGE_STATUS(Choices):
             if hasattr(value, 'help_text')
         )
 ```
-> Overridden choices classes cannot be initialised.
+> Overridden choices classes cannot be initialised to obtain a new instance. Initialisation will return a tuple of choice entries (i.e. `(value, display)`).
 
 ### Inline definition
 Alternatively, the choices can be defined dynamically by creating new `Choices` object.
@@ -98,7 +98,7 @@ PAGE_STATUS.VALID.extract('ON_HOLD')        # Choices('PAGE_STATUS.VALID.Subset'
 ```
 
 ### Choices iteration
-Choices class implements `__iter__` magic method, hence choices are iterable that yield `(value, display)`. Methods `items()`, `keys()` and `values()` can be used to return tuples of keys and values combinations.
+Choices class implements `__iter__` magic method, hence choices are iterable that yield choice entries (i.e. `(value, display)`). Methods `items()`, `keys()` and `values()` can be used to return tuples of keys and values combinations.
 ```python
 for value, display in PAGE_STATUS:
     print( value, display )
