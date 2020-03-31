@@ -45,9 +45,6 @@ class TestCase(unittest.TestCase):
         self.assertEqual(LOCAL.VAL1, str(LOCAL.VAL1))
         self.assertEqual(LOCAL.VAL1, self.CONST.VAL1)
 
-        with self.assertRaises(RuntimeError):  # init class
-            LOCAL()
-
         with self.assertRaises(TypeError):  # invalid value type
             Choices(VAL1=123.45)
 
@@ -116,6 +113,8 @@ class TestCase(unittest.TestCase):
             ),
             tuple(self.CONST)
         )
+        self.assertTrue(callable(self.CONST))
+        self.assertTupleEqual(tuple(self.CONST), self.CONST())
 
         self.assertTupleEqual(
             (
@@ -125,6 +124,8 @@ class TestCase(unittest.TestCase):
             ),
             tuple(self.CONST.SUBSET)
         )
+        self.assertTrue(callable(self.CONST.SUBSET))
+        self.assertTupleEqual(tuple(self.CONST.SUBSET), self.CONST.SUBSET())
 
         self.assertTupleEqual(('VAL1', 'VAL2', 'VAL3'), self.CONST.SUBSET.keys())
         self.assertTupleEqual(('val1', 'val2', 'value-3'), self.CONST.SUBSET.values())

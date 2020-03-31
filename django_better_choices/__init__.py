@@ -102,7 +102,7 @@ class Choices(metaclass=__ChoicesMetaclass):
     """
 
     class Value(str):
-        """Immutable string class that contains choices value configuration."""
+        """And immutable string class that contains choices value configuration."""
 
         capitalize = casefold = center = count = encode = endswith = expandtabs = find = format = format_map = \
             index = isalnum = isalpha = isascii = isdecimal = isdigit = isidentifier = islower = isnumeric = \
@@ -142,7 +142,7 @@ class Choices(metaclass=__ChoicesMetaclass):
             return str(self.__display)
 
     class Subset(tuple):
-        """Immutable subset of values, which is translated to inner choices class."""
+        """An immutable subset of values, which is translated to inner choices class."""
 
         def __new__(cls, *keys: str):
             return super().__new__(cls, dict.fromkeys(keys).keys())
@@ -152,7 +152,7 @@ class Choices(metaclass=__ChoicesMetaclass):
 
     def __new__(cls, name: Optional[str] = None, **values: Union['Value', str, Promise]):
         if cls is not Choices:
-            raise RuntimeError(f"choices object '{cls.__name__}' cannot be initialized")
+            return tuple(cls)
         if name is None:
             name = cls.__name__
         return type(name, (Choices,), values)
