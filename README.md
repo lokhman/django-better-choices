@@ -126,8 +126,8 @@ All custom choices class methods or properties (non-values) will be available in
 ```python
 PAGE_STATUS.get_help_text()
 PAGE_STATUS.VALID.get_help_text()
-PAGE.STATUS.extract('PENDING', 'ON_HOLD').get_help_text()
-PAGE.STATUS.VALID.extract('ON_HOLD').get_help_text()
+PAGE_STATUS.extract('PENDING', 'ON_HOLD').get_help_text()
+PAGE_STATUS.VALID.extract('ON_HOLD').get_help_text()
 ```
 
 ### Django model fields
