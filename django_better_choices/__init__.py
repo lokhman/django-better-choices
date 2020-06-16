@@ -6,7 +6,7 @@ try:
     from django.utils.functional import Promise
 except ImportError:
     class Promise:
-        pass
+        ...
 
 from .version import __version__
 
@@ -102,7 +102,7 @@ class Choices(metaclass=__ChoicesMetaclass):
     """
 
     class Value(str):
-        """And immutable string class that contains choices value configuration."""
+        """An immutable string class that contains choices value configuration."""
 
         capitalize = casefold = center = count = encode = endswith = expandtabs = find = format = format_map = \
             index = isalnum = isalpha = isascii = isdecimal = isdigit = isidentifier = islower = isnumeric = \
@@ -114,7 +114,7 @@ class Choices(metaclass=__ChoicesMetaclass):
             """
             Custom value class definition to support extended functionality.
 
-            Args:
+            Arguments:
                 display (Union[str, Promise]): Text used to represent the value.
                 value (str): Custom value of the value (if empty, choices key lowercase will be used).
                 params: Additional value parameters.
@@ -131,7 +131,7 @@ class Choices(metaclass=__ChoicesMetaclass):
                 raise AttributeError(f"'Value' object has no attribute '{name}'") from None
 
         def __clone__(self, value: str) -> 'Choices.Value':
-            return self.__class__(self.__display, value=value, **self.__params)
+            return Choices.Value(self.__display, value=value, **self.__params)
 
         @property
         def __choice_entry__(self) -> Tuple[str, str]:
@@ -148,7 +148,7 @@ class Choices(metaclass=__ChoicesMetaclass):
             return super().__new__(cls, dict.fromkeys(keys).keys())
 
         def __getattr__(self, _: str) -> Any:
-            """Make IDE happy."""
+            raise NotImplementedError('supported by Choices class')
 
     def __new__(cls, name: Optional[str] = None, **values: Union['Value', str, Promise]):
         if cls is not Choices:
@@ -189,10 +189,10 @@ class Choices(metaclass=__ChoicesMetaclass):
         return cls.__values[cls.__keys[value]]
 
     def __getattr__(self, _: str) -> Any:
-        """Make IDE happy for inline definition."""
+        raise NotImplementedError('supported by metaclass')
 
     def __iter__(self) -> 'Value':
-        """Make IDE happy for inline definition."""
+        raise NotImplementedError('supported by metaclass')
 
     @classmethod
     def items(cls) -> Tuple[Tuple[str, 'Value'], ...]:
@@ -224,6 +224,6 @@ class Choices(metaclass=__ChoicesMetaclass):
         return key, cls.__values[key]
 
     @classmethod
-    def extract(cls, *keys: str, name='Subset') -> 'Choices':
+    def extract(cls, *keys: str, name: str = 'Subset') -> 'Choices':
         """Dynamically extract a subset of values from the choices class."""
         return type(f'{cls.__name__}.{name}', (cls,), {k: cls.__values[k] for k in keys})
