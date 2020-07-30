@@ -1,6 +1,6 @@
 """Better choices library for Django web framework."""
 
-from typing import Any, Iterator, Optional, Tuple, Union
+from typing import Any, Iterable, Iterator, Optional, Tuple, Union
 
 try:
     from django.utils.functional import Promise
@@ -25,6 +25,24 @@ class __ChoicesMetaclass(type):
     def __repr__(self) -> str:
         kwargs = (f"'{self.__name__}'", *(f'{k}={v.display!r}' for k, v in self.items()))
         return f"Choices({', '.join(kwargs)})"
+
+    def __or__(self, other: 'Choices') -> 'Choices':
+        return self.__operation(other, '|', (*self.items(), *other.items()))
+
+    def __and__(self, other: 'Choices') -> 'Choices':
+        return self.__operation(other, '&', ((k, v) for k, v in self.items() if other.has(k)))
+
+    def __sub__(self, other: 'Choices') -> 'Choices':
+        return self.__operation(other, '-', ((k, v) for k, v in self.items() if not other.has(k)))
+
+    def __xor__(self, other: 'Choices') -> 'Choices':
+        return self.__operation(other, '^', (
+            *((k, v) for k, v in self.items() if not other.has(k)),
+            *((k, v) for k, v in other.items() if not self.has(k))
+        ))
+
+    def __operation(self, other: 'Choices', op: str, items: Iterable[Tuple[str, 'Choices.Value']]) -> 'Choices':
+        return type(f'{self.__name__}{op}{other.__name__}', (Choices,), dict(items))
 
 
 class Choices(metaclass=__ChoicesMetaclass):
@@ -213,6 +231,11 @@ class Choices(metaclass=__ChoicesMetaclass):
     def displays(cls) -> Tuple[str, ...]:
         """Return tuple of displays of values."""
         return tuple(v.display for v in cls.__values.values())
+
+    @classmethod
+    def has(cls, key: str) -> bool:
+        """Check if key exists in the choices class."""
+        return key in cls.__values
 
     @classmethod
     def find(cls, value: str) -> Optional[Tuple[str, 'Value']]:
