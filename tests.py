@@ -14,7 +14,8 @@ class TestCase(unittest.TestCase):
         VAL5 = Choices.Value('Display 5', param1='Param 5.1', param2='Param 5.2')
 
         # subsets
-        SUBSET = Choices.Subset('VAL1', 'VAL2', 'VAL3')
+        SUBSET1 = Choices.Subset('VAL1', 'VAL2', 'VAL3')
+        SUBSET2 = Choices.Subset('VAL3', 'VAL5')
 
         # nested choices
         class NESTED(Choices):
@@ -30,7 +31,7 @@ class TestCase(unittest.TestCase):
 
         self.assertEqual('CONST', self.CONST.__name__)
         self.assertEqual('CONST_NAME', Choices('CONST_NAME').__name__)
-        self.assertEqual('CONST.SUBSET', self.CONST.SUBSET.__name__)
+        self.assertEqual('CONST.SUBSET1', self.CONST.SUBSET1.__name__)
         self.assertEqual('Choices', LOCAL.__name__)
 
         self.assertEqual('Choices(VAL1, VAL2)', str(LOCAL))
@@ -52,12 +53,12 @@ class TestCase(unittest.TestCase):
             Choices(VAL1='Display 1', VAL2=Choices.Value('Display 2', value='val1'))
 
         with self.assertRaises(KeyError):  # invalid subset key
-            Choices(SUBSET=Choices.Subset('VAL1'))
+            Choices(SUBSET1=Choices.Subset('VAL1'))
 
         with self.assertRaises(KeyError):  # invalid subset key reference
             class _(Choices):
                 VAL1 = 'Display 1'
-                SUBSET = Choices.Subset(VAL1)
+                SUBSET1 = Choices.Subset(VAL1)
 
     def test_accessors(self):
         self.assertIsInstance(self.CONST.VAL1, Choices.Value)
@@ -92,9 +93,9 @@ class TestCase(unittest.TestCase):
         with self.assertRaises(KeyError):
             _ = self.CONST['val0']
 
-        self.assertIn('val2', self.CONST.SUBSET)
-        self.assertNotIn('val4', self.CONST.SUBSET)
-        self.assertIn(self.CONST.VAL1, self.CONST.SUBSET)
+        self.assertIn('val2', self.CONST.SUBSET1)
+        self.assertNotIn('val4', self.CONST.SUBSET1)
+        self.assertIn(self.CONST.VAL1, self.CONST.SUBSET1)
 
     def test_iteration(self):
         self.assertTupleEqual(('VAL1', 'VAL2', 'VAL3', 'VAL4', 'VAL5'), self.CONST.keys())
@@ -122,28 +123,49 @@ class TestCase(unittest.TestCase):
                 ('val2', 'Display 2'),
                 ('value-3', 'Display 3'),
             ),
-            tuple(self.CONST.SUBSET)
+            tuple(self.CONST.SUBSET1)
         )
-        self.assertTrue(callable(self.CONST.SUBSET))
-        self.assertTupleEqual(tuple(self.CONST.SUBSET), self.CONST.SUBSET())
+        self.assertTrue(callable(self.CONST.SUBSET1))
+        self.assertTupleEqual(tuple(self.CONST.SUBSET1), self.CONST.SUBSET1())
 
-        self.assertTupleEqual(('VAL1', 'VAL2', 'VAL3'), self.CONST.SUBSET.keys())
-        self.assertTupleEqual(('val1', 'val2', 'value-3'), self.CONST.SUBSET.values())
+        self.assertTupleEqual(('VAL1', 'VAL2', 'VAL3'), self.CONST.SUBSET1.keys())
+        self.assertTupleEqual(('val1', 'val2', 'value-3'), self.CONST.SUBSET1.values())
         self.assertTupleEqual(
-            tuple(zip(self.CONST.SUBSET.keys(), self.CONST.SUBSET.values())),
-            self.CONST.SUBSET.items()
+            tuple(zip(self.CONST.SUBSET1.keys(), self.CONST.SUBSET1.values())),
+            self.CONST.SUBSET1.items()
         )
 
-        self.assertTupleEqual(('Display 1', 'Display 2', 'Display 3'), self.CONST.SUBSET.displays())
+        self.assertTupleEqual(('Display 1', 'Display 2', 'Display 3'), self.CONST.SUBSET1.displays())
 
     def test_extract(self):
         choices_extract = self.CONST.extract('VAL2', 'VAL5')
         self.assertEqual('CONST.Subset', choices_extract.__name__)
         self.assertTupleEqual(('val2', 'val5'), choices_extract.values())
 
-        subset_extract = self.CONST.SUBSET.extract('VAL1', 'VAL3', name='SPECIAL')
-        self.assertEqual('CONST.SUBSET.SPECIAL', subset_extract.__name__)
+        subset_extract = self.CONST.SUBSET1.extract('VAL1', 'VAL3', name='SPECIAL')
+        self.assertEqual('CONST.SUBSET1.SPECIAL', subset_extract.__name__)
         self.assertTupleEqual(('val1', 'value-3'), subset_extract.values())
+
+    def test_operations(self):
+        union = self.CONST.SUBSET1 | self.CONST.SUBSET2
+        self.assertEqual('CONST.SUBSET1|CONST.SUBSET2', union.__name__)
+        self.assertTupleEqual(('VAL1', 'VAL2', 'VAL3', 'VAL5'), union.keys())
+        self.assertTupleEqual((self.CONST.VAL1, self.CONST.VAL2, self.CONST.VAL3, self.CONST.VAL5), union.values())
+
+        intersection = self.CONST.SUBSET1 & self.CONST.SUBSET2
+        self.assertEqual('CONST.SUBSET1&CONST.SUBSET2', intersection.__name__)
+        self.assertTupleEqual(('VAL3',), intersection.keys())
+        self.assertTupleEqual((self.CONST.VAL3, ), intersection.values())
+
+        difference = self.CONST.SUBSET1 - self.CONST.SUBSET2
+        self.assertEqual('CONST.SUBSET1-CONST.SUBSET2', difference.__name__)
+        self.assertTupleEqual(('VAL1', 'VAL2'), difference.keys())
+        self.assertTupleEqual((self.CONST.VAL1, self.CONST.VAL2), difference.values())
+
+        symmetric_difference = self.CONST.SUBSET1 ^ self.CONST.SUBSET2
+        self.assertEqual('CONST.SUBSET1^CONST.SUBSET2', symmetric_difference.__name__)
+        self.assertTupleEqual(('VAL1', 'VAL2', 'VAL5'), symmetric_difference.keys())
+        self.assertTupleEqual((self.CONST.VAL1, self.CONST.VAL2, self.CONST.VAL5), symmetric_difference.values())
 
 
 if __name__ == '__main__':
