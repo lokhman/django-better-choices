@@ -103,9 +103,6 @@ class Choices(metaclass=__ChoicesMetaclass):
         def __new__(cls, *keys: str):
             return super().__new__(cls, dict.fromkeys(keys).keys())
 
-        def __getattr__(self, _: str) -> Any:
-            raise NotImplementedError('supported by Choices class')
-
     def __new__(cls, name: Optional[str] = None, **values: Union['Value', str, Promise]):
         if cls is not Choices:
             return tuple(cls)

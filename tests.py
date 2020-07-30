@@ -71,7 +71,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual('val20', self.CONST.NESTED.VAL20)
         self.assertEqual('val4', getattr(self.CONST, 'VAL4'))
 
-        self.assertTrue(callable(self.CONST.VAL4.strip))
+        self.assertTrue('xal4', self.CONST.VAL4.replace('v', 'x'))
         self.assertEqual('Custom', self.CONST.VAL5.strip)
 
         with self.assertRaises(AttributeError):  # invalid key
