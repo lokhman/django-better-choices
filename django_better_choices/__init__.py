@@ -146,6 +146,10 @@ class Choices(metaclass=__ChoicesMetaclass):
             try:
                 return self.__params[name]
             except KeyError:
+                if hasattr(str, name):
+                    def wrapper(*args, **kwargs):  # native str method
+                        return getattr(str, name)(self, *args, **kwargs)
+                    return wrapper
                 raise AttributeError(f"'Value' object has no attribute '{name}'") from None
 
         def __clone__(self, value: str) -> 'Choices.Value':
@@ -206,11 +210,10 @@ class Choices(metaclass=__ChoicesMetaclass):
     def __class_getitem__(cls, value: str) -> 'Value':
         return cls.__values[cls.__keys[value]]
 
-    def __getattr__(self, _: str) -> Any:
-        raise NotImplementedError('supported by metaclass')
-
-    def __iter__(self) -> 'Value':
-        raise NotImplementedError('supported by metaclass')
+    @classmethod
+    def has(cls, key: str) -> bool:
+        """Check if key exists in the choices class."""
+        return key in cls.__values
 
     @classmethod
     def items(cls) -> Tuple[Tuple[str, 'Value'], ...]:
@@ -231,11 +234,6 @@ class Choices(metaclass=__ChoicesMetaclass):
     def displays(cls) -> Tuple[str, ...]:
         """Return tuple of displays of values."""
         return tuple(v.display for v in cls.__values.values())
-
-    @classmethod
-    def has(cls, key: str) -> bool:
-        """Check if key exists in the choices class."""
-        return key in cls.__values
 
     @classmethod
     def find(cls, value: str) -> Optional[Tuple[str, 'Value']]:

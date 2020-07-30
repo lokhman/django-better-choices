@@ -11,7 +11,7 @@ class TestCase(unittest.TestCase):
         VAL2 = Choices.Value('Display 2')
         VAL3 = Choices.Value('Display 3', value='value-3')
         VAL4 = Choices.Value('Display 4', param1='Param 4.1')
-        VAL5 = Choices.Value('Display 5', param1='Param 5.1', param2='Param 5.2')
+        VAL5 = Choices.Value('Display 5', param1='Param 5.1', param2='Param 5.2', strip='Custom')
 
         # subsets
         SUBSET1 = Choices.Subset('VAL1', 'VAL2', 'VAL3')
@@ -70,6 +70,9 @@ class TestCase(unittest.TestCase):
         self.assertEqual('Param 4.1', self.CONST.VAL4.param1)
         self.assertEqual('val20', self.CONST.NESTED.VAL20)
         self.assertEqual('val4', getattr(self.CONST, 'VAL4'))
+
+        self.assertTrue(callable(self.CONST.VAL4.strip))
+        self.assertEqual('Custom', self.CONST.VAL5.strip)
 
         with self.assertRaises(AttributeError):  # invalid key
             _ = self.CONST.VAL0
