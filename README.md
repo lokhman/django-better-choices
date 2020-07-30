@@ -30,6 +30,7 @@ class PAGE_STATUS(Choices):
     ON_HOLD = Choices.Value('On Hold', value='custom_on_hold')
 
     VALID = Choices.Subset('CREATED', 'ON_HOLD')
+    INVISIBLE = Choices.Subset('PENDING', 'ON_HOLD')
 
     class INTERNAL_STATUS(Choices):
         REVIEW = 'On Review'
@@ -70,7 +71,7 @@ print( PAGE_STATUS.PENDING.help_text )      # 'This set status to pending'
 PAGE_STATUS.ON_HOLD == 'custom_on_hold'     # True
 PAGE_STATUS.CREATED == PAGE_STATUS.CREATED  # True
 ```
-> `Choices.Value` is an immutable string class, which object cannot be modified after initialisation. Standard non-magic `str` methods are not supported in `Choices.Value`, in other cases its object behaves like a normal string, e.g. `{'val1': 'something'}[CHOICES.VAL1] == 'something'`.
+> `Choices.Value` is an immutable string class, which object cannot be modified after initialisation. Native non-magic `str` methods can be overridden in `Choices.Value` custom parameters. `Choices.Value` behaves like a normal string, e.g. `{'val1': 'something'}[CHOICES.VAL1] == 'something'`.
 
 ### Search in choices
 Search in choices is performed by value.
@@ -119,6 +120,15 @@ for display in PAGE_STATUS.displays():
 
 for display in PAGE_STATUS.SUBSET.displays():
     print( display )
+```
+
+### Set operations
+Choices class supports standard set operations: *union* (`|`), *intersection* (`&`), *difference* (`-`), and *symmetric_difference* (`^`).
+```python
+PAGE_STATUS.VALID | PAGE_STATUS.INVISIBLE     # Choices(CREATED, ON_HOLD, PENDING)
+PAGE_STATUS.VALID & PAGE_STATUS.INVISIBLE     # Choices(ON_HOLD)
+PAGE_STATUS.VALID - PAGE_STATUS.INVISIBLE     # Choices(CREATED)
+PAGE_STATUS.VALID ^ PAGE_STATUS.INVISIBLE     # Choices(CREATED, PENDING)
 ```
 
 ### Custom methods

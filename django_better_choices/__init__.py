@@ -49,74 +49,8 @@ class Choices(metaclass=__ChoicesMetaclass):
     """
     Choices class that should be overridden or initialised for constant class definition.
 
-    Example:
-        # init via class definition
-        class PAGE_STATUS(Choices):
-            CREATED = 'Created'
-            PENDING = Choices.Value('Pending', help_text='This set status to pending')
-            ON_HOLD = Choices.Value('On Hold', value='custom_on_hold')
-
-            VALID = Choices.Subset('CREATED', 'ON_HOLD')
-
-            # supports inner choices
-            class INTERNAL_STATUS(Choices):
-                REVIEW = 'On Review'
-
-        # init via inline definition
-        PAGE_STATUS = Choices('PAGE_STATUS', SUCCESS='Success', FAIL='Error')
-
-        # value accessors
-        value_created = PAGE_STATUS.CREATED
-        value_review = PAGE_STATUS.INTERNAL_STATUS.REVIEW
-        value_on_hold = getattr(PAGE_STATUS, 'ON_HOLD')
-
-        # values and value parameters
-        print( PAGE_STATUS.CREATED )                # 'created'
-        print( PAGE_STATUS.ON_HOLD )                # 'custom_on_hold'
-        print( PAGE_STATUS.PENDING.display )        # 'Pending'
-        print( PAGE_STATUS.PENDING.help_text )      # 'This set status to pending'
-
-        # values comparison
-        PAGE_STATUS.ON_HOLD == 'custom_on_hold'     # True
-        PAGE_STATUS.CREATED == PAGE_STATUS.CREATED  # True
-
-        # search in choices
-        'created' in PAGE_STATUS                    # True
-        'custom_on_hold' in PAGE_STATUS             # True
-        'on_hold' in PAGE_STATUS                    # False
-        value = PAGE_STATUS['custom_on_hold']       # Choices.Value
-        key, value = PAGE_STATUS.find('created')    # ('CREATED', Choices.Value)
-
-        # search in subsets
-        'custom_on_hold' in PAGE_STATUS.VALID       # True
-        PAGE_STATUS.CREATED in PAGE_STATUS.VALID    # True
-
-        # extract subset
-        PAGE_STATUS.extract('CREATED', 'ON_HOLD')   # ~= PAGE_STATUS.VALID
-        PAGE_STATUS.VALID.extract('ON_HOLD')        # Choices('PAGE_STATUS.VALID.Subset', ON_HOLD)
-
-        # choices iteration
-        for value, display in PAGE_STATUS:
-            print( value, display )
-        for key, value in PAGE_STATUS.items():
-            print( key, value, value.display )
-        for key in PAGE_STATUS.keys():
-            print( key )
-        for value in PAGE_STATUS.values():
-            print( value, value.display, value.__choice_entry__ )
-        for display in PAGE_STATUS.displays():
-            print( display )
-        for display in PAGE_STATUS.SUBSET.displays():
-            print( display )
-
-        # Django model fields
-        class Page(models.Model):
-            status = models.CharField(choices=PAGE_STATUS, default=PAGE_STATUS.CREATED)
-
-        # saving choices values on models
-        page = Page.objects.get(pk=1)
-        page.status = PAGE_STATUS.PENDING
-        page.save()
+    Examples:
+        https://pypi.org/project/django-better-choices/
     """
 
     class Value(str):
