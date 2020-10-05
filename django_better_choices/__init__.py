@@ -1,6 +1,6 @@
 """Better choices library for Django web framework."""
 
-from typing import Any, Iterable, Iterator, Optional, Tuple, Union
+from typing import Any, Iterable, Iterator, Optional, Tuple, TypeVar, Union, overload
 
 try:
     from django.utils.functional import Promise
@@ -42,7 +42,7 @@ class _Value(str):
                 def wrapper(*args, **kwargs):  # native str method
                     return getattr(str, name)(self, *args, **kwargs)
                 return wrapper
-            raise AttributeError(f"choices value has no attribute '{name}'") from None
+            raise AttributeError(f'choices class value {self!r} has no attribute {name!r}') from None
 
     def __clone__(self, value: str) -> '_Value':
         return _Value(self.__display, value=value, **self.__params)
@@ -65,7 +65,11 @@ class _Subset(tuple):
 
 class __ChoicesMetaclass(type):
     def __contains__(self, value: str) -> bool:
-        return self.find(value) is not None
+        try:
+            _ = self[value]
+        except KeyError:
+            return False
+        return True
 
     def __iter__(self) -> Iterator[Tuple[str, str]]:
         for value in self.values():
@@ -82,15 +86,15 @@ class __ChoicesMetaclass(type):
         return self.__operation(other, '|', (*self.items(), *other.items()))
 
     def __and__(self, other: 'Choices') -> 'Choices':
-        return self.__operation(other, '&', ((k, v) for k, v in self.items() if other.has(k)))
+        return self.__operation(other, '&', ((k, v) for k, v in self.items() if other.has_key(k)))
 
     def __sub__(self, other: 'Choices') -> 'Choices':
-        return self.__operation(other, '-', ((k, v) for k, v in self.items() if not other.has(k)))
+        return self.__operation(other, '-', ((k, v) for k, v in self.items() if not other.has_key(k)))
 
     def __xor__(self, other: 'Choices') -> 'Choices':
         return self.__operation(other, '^', (
-            *((k, v) for k, v in self.items() if not other.has(k)),
-            *((k, v) for k, v in other.items() if not self.has(k))
+            *((k, v) for k, v in self.items() if not other.has_key(k)),
+            *((k, v) for k, v in other.items() if not self.has_key(k))
         ))
 
     def __operation(self, other: 'Choices', op: str, items: Iterable[Tuple[str, _Value]]) -> 'Choices':
@@ -108,12 +112,23 @@ class Choices(metaclass=__ChoicesMetaclass):
     Value = _Value
     Subset = _Subset
 
-    def __new__(cls, name: Optional[str] = None, **values: Union[_Value, str, Promise]):
+    __DefaultType = TypeVar('__DefaultType')
+    __ValueType = Union[_Value, str, Promise]
+
+    @overload
+    def __new__(cls) -> 'Choices': ...
+    @overload
+    def __new__(cls, __name: str) -> 'Choices': ...
+    @overload
+    def __new__(cls, __name: str, **values: __ValueType) -> 'Choices': ...
+    @overload
+    def __new__(cls, **values: __ValueType) -> 'Choices': ...
+    @overload
+    def __new__(cls, **params: Any) -> Tuple[Tuple[str, str], ...]: ...
+    def __new__(cls, __name: str = None, **values: __ValueType):
         if cls is not Choices:
-            return tuple(cls)
-        if name is None:
-            name = cls.__name__
-        return type(name, (Choices,), values)
+            return tuple(v.__choice_entry__ for _, v in cls.__items_iter(**values))
+        return type(cls.__name__ if __name is None else __name, (Choices,), values)
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -122,7 +137,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         cls.__values = {}
 
         for key, value in cls.__dict__.items():
-            if key.startswith('__'):
+            if key.startswith('_'):
                 continue
 
             if isinstance(value, _Value):
@@ -130,7 +145,10 @@ class Choices(metaclass=__ChoicesMetaclass):
                     value = value.__clone__(key.lower())
                     setattr(cls, key, value)
                 elif value in cls.__keys:
-                    raise ValueError(f"choices key '{cls.__name__}.{key}' has duplicated value: {value!r}")
+                    raise ValueError(
+                        f"choices class key {cls.__qualname__+'.'+key!r} "
+                        f'has a duplicated value {value!r}'
+                    )
                 cls.__keys[value] = key
                 cls.__values[key] = value
             elif isinstance(value, (str, Promise)):
@@ -142,43 +160,85 @@ class Choices(metaclass=__ChoicesMetaclass):
                 setattr(cls, key, cls.extract(*value, name=key))
 
     def __class_getitem__(cls, value: str) -> _Value:
-        return cls.__values[cls.__keys[value]]
+        try:
+            return cls.__values[cls.__keys[value]]
+        except KeyError:
+            raise KeyError(f'value {value!r} is not found in choices class {cls.__qualname__!r}') from None
 
     @classmethod
-    def has(cls, key: str) -> bool:
-        """Check if key exists in the choices class."""
+    def __items_iter(cls, **params: Any) -> Iterator[Tuple[str, _Value]]:
+        if not params:
+            yield from cls.__values.items()
+        else:
+            for key, value in cls.__values.items():
+                if all(hasattr(value, k) and getattr(value, k) == v for k, v in params.items()):
+                    yield key, value
+
+    @overload
+    @classmethod
+    def get(cls, value: str) -> Optional[_Value]: ...
+    @overload
+    @classmethod
+    def get(cls, value: str, default: __DefaultType) -> Union[_Value, __DefaultType]: ...
+    @classmethod
+    def get(cls, value: str, default: __DefaultType = None) -> Union[_Value, __DefaultType]:
+        """Return value if it exists in choices class, otherwise return default or None."""
+        try:
+            return cls[value]
+        except KeyError:
+            return default
+
+    @overload
+    @classmethod
+    def get_key(cls, value: str) -> Optional[_Value]: ...
+    @overload
+    @classmethod
+    def get_key(cls, value: str, default: __DefaultType) -> Union[_Value, __DefaultType]: ...
+    @classmethod
+    def get_key(cls, value: str, default: __DefaultType = None) -> Union[_Value, __DefaultType]:
+        """Return key if value exists in choices class, otherwise return default or None."""
+        return cls.__keys.get(value, default)
+
+    @classmethod
+    def has_key(cls, key: str) -> bool:
+        """Check if key exists in choices class."""
         return key in cls.__values
 
     @classmethod
-    def items(cls) -> Tuple[Tuple[str, _Value], ...]:
+    def items(cls, **params: Any) -> Tuple[Tuple[str, _Value], ...]:
         """Return tuple of key-value tuples as ((K1, V1), (K2, V2), etc)."""
-        return tuple(cls.__values.items())
+        return tuple(cls.__items_iter(**params))
 
     @classmethod
-    def keys(cls) -> Tuple[str, ...]:
+    def keys(cls, **params: Any) -> Tuple[str, ...]:
         """Return tuple of keys of choices as (K1, K2, etc)."""
-        return tuple(cls.__values.keys())
+        return tuple(k for k, _ in cls.__items_iter(**params))
 
     @classmethod
-    def values(cls) -> Tuple[_Value, ...]:
+    def values(cls, **params: Any) -> Tuple[_Value, ...]:
         """Return tuple of values as (V1, V2, etc)."""
-        return tuple(cls.__values.values())
+        return tuple(v for _, v in cls.__items_iter(**params))
 
     @classmethod
-    def displays(cls) -> Tuple[str, ...]:
-        """Return tuple of displays of values."""
-        return tuple(v.display for v in cls.__values.values())
+    def displays(cls, **params: Any) -> Tuple[str, ...]:
+        """Return tuple of displays of choices values."""
+        return tuple(v.display for _, v in cls.__items_iter(**params))
+
+    @classmethod
+    def extract(cls, *keys: str, name: str = 'Subset') -> 'Choices':
+        """Dynamically extract subset of values from choices class."""
+        return type(f'{cls.__name__}.{name}', (cls,), {k: cls.__values[k] for k in keys})
 
     @classmethod
     def find(cls, value: str) -> Optional[Tuple[str, _Value]]:
         """Return key-value tuple if the given value exists in the choices, otherwise return None."""
+        __import__('warnings').warn(
+            "'Choices.find()' method is deprecated, use 'Choices.get()' and 'Choices.get_key()'",
+            DeprecationWarning
+        )
+
         try:
             key = cls.__keys[value]
         except KeyError:
             return None
         return key, cls.__values[key]
-
-    @classmethod
-    def extract(cls, *keys: str, name: str = 'Subset') -> 'Choices':
-        """Dynamically extract a subset of values from the choices class."""
-        return type(f'{cls.__name__}.{name}', (cls,), {k: cls.__values[k] for k in keys})

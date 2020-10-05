@@ -80,7 +80,8 @@ Search in choices is performed by value.
 'custom_on_hold' in PageStatus             # True
 'on_hold' in PageStatus                    # False
 value = PageStatus['custom_on_hold']       # Choices.Value
-key, value = PageStatus.find('created')    # ('CREATED', Choices.Value)
+value = PageStatus.get('on_hold', 123.45)  # 123.45
+key = PageStatus.get_key('created')        # 'CREATED'
 ```
 
 ### Search in subsets
@@ -101,7 +102,7 @@ PageStatus.VALID.extract('ON_HOLD')        # Choices('PageStatus.VALID.Subset', 
 ### Choices iteration
 Choices class implements `__iter__` magic method, hence choices are iterable that yield choice entries (i.e. `(value, display)`). Methods `items()`, `keys()` and `values()` can be used to return tuples of keys and values combinations.
 ```python
-for value, display in PageStatus:
+for value, display in PageStatus:  # can also be used as callable, i.e. PageStatus()
     print( value, display )
 
 for key, value in PageStatus.items():
@@ -121,6 +122,7 @@ for display in PageStatus.displays():
 for display in PageStatus.SUBSET.displays():
     print( display )
 ```
+> Iteration methods `items()`, `keys()`, `values()`, `displays()`, as well as class constructor can accept keyword arguments to filter collections based on custom parameters, e.g. `PageStatus.values(help_text='Some', special=123)`.
 
 ### Set operations
 Choices class supports standard set operations: *union* (`|`), *intersection* (`&`), *difference* (`-`), and *symmetric difference* (`^`).
