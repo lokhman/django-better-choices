@@ -174,6 +174,10 @@ class TestCase(unittest.TestCase):
         self.assertTupleEqual(('VAL1', 'VAL2', 'VAL5'), symmetric_difference.keys())
         self.assertTupleEqual((self.CONST.VAL1, self.CONST.VAL2, self.CONST.VAL5), symmetric_difference.values())
 
+    def test_str_methods(self):
+        for method in (fn for fn in dir(str) if not fn.startswith('__')):
+            self.assertIn(method, Choices.Value.__dict__)
+
 
 if __name__ == '__main__':
     unittest.main()
