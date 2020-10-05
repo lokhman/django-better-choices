@@ -17,6 +17,10 @@ class TestCase(unittest.TestCase):
         SUBSET1 = Choices.Subset('VAL1', 'VAL2', 'VAL3')
         SUBSET2 = Choices.Subset('VAL3', 'VAL5')
 
+        # arbitrary data
+        DATA1 = 123.45
+        data2 = [1, 2, 3]
+
         # nested choices
         class NESTED(Choices):
             VAL10 = 'Display 10'
@@ -46,8 +50,8 @@ class TestCase(unittest.TestCase):
         self.assertEqual(LOCAL.VAL1, str(LOCAL.VAL1))
         self.assertEqual(LOCAL.VAL1, self.CONST.VAL1)
 
-        with self.assertRaises(TypeError):  # invalid value type
-            Choices(VAL1=123.45)
+        self.assertEqual(123.45, self.CONST.DATA1)
+        self.assertListEqual([1, 2, 3], self.CONST.data2)
 
         with self.assertRaises(ValueError):  # duplicated value
             Choices(VAL1='Display 1', VAL2=Choices.Value('Display 2', value='val1'))

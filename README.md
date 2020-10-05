@@ -123,7 +123,7 @@ for display in PAGE_STATUS.SUBSET.displays():
 ```
 
 ### Set operations
-Choices class supports standard set operations: *union* (`|`), *intersection* (`&`), *difference* (`-`), and *symmetric_difference* (`^`).
+Choices class supports standard set operations: *union* (`|`), *intersection* (`&`), *difference* (`-`), and *symmetric difference* (`^`).
 ```python
 PAGE_STATUS.VALID | PAGE_STATUS.INVISIBLE     # Choices(CREATED, ON_HOLD, PENDING)
 PAGE_STATUS.VALID & PAGE_STATUS.INVISIBLE     # Choices(ON_HOLD)

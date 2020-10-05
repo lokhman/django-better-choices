@@ -6,7 +6,7 @@ try:
     from django.utils.functional import Promise
 except ImportError:
     class Promise:
-        ...
+        pass
 
 from .version import __version__
 
@@ -116,8 +116,8 @@ class Choices(metaclass=__ChoicesMetaclass):
         cls.__keys = {}
         cls.__values = {}
 
-        for key, value in vars(cls).items():
-            if callable(value) or not key.isupper():
+        for key, value in cls.__dict__.items():
+            if key.startswith('__'):
                 continue
 
             if isinstance(value, cls.Value):
@@ -135,8 +135,6 @@ class Choices(metaclass=__ChoicesMetaclass):
                 cls.__values[key] = value
             elif isinstance(value, cls.Subset):
                 setattr(cls, key, cls.extract(*value, name=key))
-            else:
-                raise TypeError(f"choices key '{cls.__name__}.{key}' has invalid value type: '{type(value).__name__}'")
 
     def __class_getitem__(cls, value: str) -> 'Value':
         return cls.__values[cls.__keys[value]]
