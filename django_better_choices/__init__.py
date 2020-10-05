@@ -11,6 +11,58 @@ except ImportError:
 from .version import __version__
 
 
+class _Value(str):
+    """An immutable string class that contains choices value configuration."""
+
+    capitalize = casefold = center = count = encode = endswith = expandtabs = find = format = format_map = \
+        index = isalnum = isalpha = isascii = isdecimal = isdigit = isidentifier = islower = isnumeric = \
+        isprintable = isspace = istitle = isupper = join = ljust = lower = lstrip = maketrans = partition = \
+        replace = rfind = rindex = rjust = rpartition = rsplit = rstrip = split = splitlines = startswith = \
+        strip = swapcase = title = translate = upper = zfill = property()
+
+    def __new__(cls, display: Union[str, Promise], *, value: str = '', **params: Any):
+        """
+        Custom value class definition to support extended functionality.
+
+        Arguments:
+            display (Union[str, Promise]): Text used to represent the value.
+            value (str): Custom value of the value (if empty, choices key lowercase will be used).
+            params: Additional value parameters.
+        """
+        self = super().__new__(cls, value)
+        self.__display = display
+        self.__params = params
+        return self
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self.__params[name]
+        except KeyError:
+            if hasattr(str, name):
+                def wrapper(*args, **kwargs):  # native str method
+                    return getattr(str, name)(self, *args, **kwargs)
+                return wrapper
+            raise AttributeError(f"choices value has no attribute '{name}'") from None
+
+    def __clone__(self, value: str) -> '_Value':
+        return _Value(self.__display, value=value, **self.__params)
+
+    @property
+    def __choice_entry__(self) -> Tuple[str, str]:
+        return self.__str__(), self.display
+
+    @property
+    def display(self) -> str:
+        return str(self.__display)
+
+
+class _Subset(tuple):
+    """An immutable subset of values, which is translated to inner choices class."""
+
+    def __new__(cls, *keys: str):
+        return super().__new__(cls, dict.fromkeys(keys).keys())
+
+
 class __ChoicesMetaclass(type):
     def __contains__(self, value: str) -> bool:
         return self.find(value) is not None
@@ -41,7 +93,7 @@ class __ChoicesMetaclass(type):
             *((k, v) for k, v in other.items() if not self.has(k))
         ))
 
-    def __operation(self, other: 'Choices', op: str, items: Iterable[Tuple[str, 'Choices.Value']]) -> 'Choices':
+    def __operation(self, other: 'Choices', op: str, items: Iterable[Tuple[str, _Value]]) -> 'Choices':
         return type(f'{self.__name__}{op}{other.__name__}', (Choices,), dict(items))
 
 
@@ -53,57 +105,10 @@ class Choices(metaclass=__ChoicesMetaclass):
         https://pypi.org/project/django-better-choices/
     """
 
-    class Value(str):
-        """An immutable string class that contains choices value configuration."""
+    Value = _Value
+    Subset = _Subset
 
-        capitalize = casefold = center = count = encode = endswith = expandtabs = find = format = format_map = \
-            index = isalnum = isalpha = isascii = isdecimal = isdigit = isidentifier = islower = isnumeric = \
-            isprintable = isspace = istitle = isupper = join = ljust = lower = lstrip = maketrans = partition = \
-            replace = rfind = rindex = rjust = rpartition = rsplit = rstrip = split = splitlines = startswith = \
-            strip = swapcase = title = translate = upper = zfill = property()
-
-        def __new__(cls, display: Union[str, Promise], *, value: str = '', **params: Any):
-            """
-            Custom value class definition to support extended functionality.
-
-            Arguments:
-                display (Union[str, Promise]): Text used to represent the value.
-                value (str): Custom value of the value (if empty, choices key lowercase will be used).
-                params: Additional value parameters.
-            """
-            self = super().__new__(cls, value)
-            self.__display = display
-            self.__params = params
-            return self
-
-        def __getattr__(self, name: str) -> Any:
-            try:
-                return self.__params[name]
-            except KeyError:
-                if hasattr(str, name):
-                    def wrapper(*args, **kwargs):  # native str method
-                        return getattr(str, name)(self, *args, **kwargs)
-                    return wrapper
-                raise AttributeError(f"'Value' object has no attribute '{name}'") from None
-
-        def __clone__(self, value: str) -> 'Choices.Value':
-            return Choices.Value(self.__display, value=value, **self.__params)
-
-        @property
-        def __choice_entry__(self) -> Tuple[str, str]:
-            return self.__str__(), self.display
-
-        @property
-        def display(self) -> str:
-            return str(self.__display)
-
-    class Subset(tuple):
-        """An immutable subset of values, which is translated to inner choices class."""
-
-        def __new__(cls, *keys: str):
-            return super().__new__(cls, dict.fromkeys(keys).keys())
-
-    def __new__(cls, name: Optional[str] = None, **values: Union['Value', str, Promise]):
+    def __new__(cls, name: Optional[str] = None, **values: Union[_Value, str, Promise]):
         if cls is not Choices:
             return tuple(cls)
         if name is None:
@@ -120,7 +125,7 @@ class Choices(metaclass=__ChoicesMetaclass):
             if key.startswith('__'):
                 continue
 
-            if isinstance(value, cls.Value):
+            if isinstance(value, _Value):
                 if value == '':
                     value = value.__clone__(key.lower())
                     setattr(cls, key, value)
@@ -129,14 +134,14 @@ class Choices(metaclass=__ChoicesMetaclass):
                 cls.__keys[value] = key
                 cls.__values[key] = value
             elif isinstance(value, (str, Promise)):
-                value = cls.Value(value, value=key.lower())
+                value = _Value(value, value=key.lower())
                 setattr(cls, key, value)
                 cls.__keys[value] = key
                 cls.__values[key] = value
-            elif isinstance(value, cls.Subset):
+            elif isinstance(value, _Subset):
                 setattr(cls, key, cls.extract(*value, name=key))
 
-    def __class_getitem__(cls, value: str) -> 'Value':
+    def __class_getitem__(cls, value: str) -> _Value:
         return cls.__values[cls.__keys[value]]
 
     @classmethod
@@ -145,7 +150,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         return key in cls.__values
 
     @classmethod
-    def items(cls) -> Tuple[Tuple[str, 'Value'], ...]:
+    def items(cls) -> Tuple[Tuple[str, _Value], ...]:
         """Return tuple of key-value tuples as ((K1, V1), (K2, V2), etc)."""
         return tuple(cls.__values.items())
 
@@ -155,7 +160,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         return tuple(cls.__values.keys())
 
     @classmethod
-    def values(cls) -> Tuple['Value', ...]:
+    def values(cls) -> Tuple[_Value, ...]:
         """Return tuple of values as (V1, V2, etc)."""
         return tuple(cls.__values.values())
 
@@ -165,7 +170,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         return tuple(v.display for v in cls.__values.values())
 
     @classmethod
-    def find(cls, value: str) -> Optional[Tuple[str, 'Value']]:
+    def find(cls, value: str) -> Optional[Tuple[str, _Value]]:
         """Return key-value tuple if the given value exists in the choices, otherwise return None."""
         try:
             key = cls.__keys[value]
