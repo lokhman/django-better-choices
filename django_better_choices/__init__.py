@@ -125,10 +125,10 @@ class Choices(metaclass=__ChoicesMetaclass):
     def __new__(cls, **values: __ValueType) -> 'Choices': ...
     @overload
     def __new__(cls, **params: Any) -> Tuple[Tuple[str, str], ...]: ...
-    def __new__(cls, __name: str = None, **values: __ValueType):
+    def __new__(cls, __name: str = None, **kwargs: Union[__ValueType, Any]):
         if cls is not Choices:
-            return tuple(v.__choice_entry__ for _, v in cls.__items_iter(**values))
-        return type(cls.__name__ if __name is None else __name, (Choices,), values)
+            return tuple(v.__choice_entry__ for _, v in cls.__items_iter(**kwargs))
+        return type(cls.__name__ if __name is None else __name, (Choices,), kwargs)
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -236,7 +236,6 @@ class Choices(metaclass=__ChoicesMetaclass):
             "'Choices.find()' method is deprecated, use 'Choices.get()' and 'Choices.get_key()'",
             DeprecationWarning
         )
-
         try:
             key = cls.__keys[value]
         except KeyError:
