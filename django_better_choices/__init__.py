@@ -230,7 +230,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         return type(f'{cls.__name__}.{name}', (cls,), {k: cls.__values[k] for k in keys})
 
     @classmethod
-    def find(cls, value: str) -> Optional[Tuple[str, _Value]]:
+    def find(cls, value: str) -> Optional[Tuple[str, _Value]]:  # pragma: no cover
         """Return key-value tuple if the given value exists in the choices, otherwise return None."""
         __import__('warnings').warn(
             "'Choices.find()' method is deprecated, use 'Choices.get()' and 'Choices.get_key()'",
