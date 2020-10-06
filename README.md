@@ -46,11 +46,11 @@ class PageStatus(Choices):
 > Overridden choices classes cannot be initialised to obtain a new instance. Initialisation will return a tuple of choice entries.
 
 ### Inline definition
-Alternatively, the choices can be defined dynamically by creating new `Choices` object.
+Alternatively, the choices can be defined dynamically by creating a new `Choices` instance.
 ```python
 PageStatus = Choices('PageStatus', SUCCESS='Success', FAIL='Error')
 ```
-> The first `name` parameter of `Choices` constructor is optional and required only for better representation of the returned object.
+> The first `name` parameter of `Choices` constructor is optional and required only for better representation of the returned instance.
 
 ### Value accessors
 You can access choices values using dot notation and with `getattr()`.
@@ -71,7 +71,7 @@ print( PageStatus.PENDING.help_text )      # 'This set status to pending'
 PageStatus.ON_HOLD == 'custom_on_hold'     # True
 PageStatus.CREATED == PageStatus.CREATED   # True
 ```
-> `Choices.Value` is an immutable string class, which object cannot be modified after initialisation. Native non-magic `str` methods can be overridden in `Choices.Value` custom parameters. `Choices.Value` behaves like a normal string, e.g. `{'val1': 'something'}[CHOICES.VAL1] == 'something'`.
+> `Choices.Value` is an immutable string class, which instance cannot be modified after initialisation. Native non-magic `str` methods can be overridden in `Choices.Value` custom parameters. `Choices.Value` behaves like a normal string, e.g. `{'val1': 'something'}[CHOICES.VAL1] == 'something'`.
 
 ### Search in choices
 Search in choices is performed by value.
@@ -93,7 +93,7 @@ PageStatus.CREATED in PageStatus.VALID     # True
 > `Choices.Subset` is a subclass of `tuple`, which is translated to inner choices class after definition. All internal or custom choices class methods or properties will be available in a subset class (see "Custom methods" section).
 
 ### Extract subset
-Subsets of choices can be dynamically extracted using a special `extract()` method.
+Subsets of choices can be dynamically extracted with `extract()` method.
 ```python
 PageStatus.extract('CREATED', 'ON_HOLD')   # ~= PageStatus.VALID
 PageStatus.VALID.extract('ON_HOLD')        # Choices('PageStatus.VALID.Subset', ON_HOLD)
@@ -125,7 +125,7 @@ for display in PageStatus.SUBSET.displays():
 > Iteration methods `items()`, `keys()`, `values()`, `displays()`, as well as class constructor can accept keyword arguments to filter collections based on custom parameters, e.g. `PageStatus.values(help_text='Some', special=123)`.
 
 ### Set operations
-Choices class supports standard set operations: *union* (`|`), *intersection* (`&`), *difference* (`-`), and *symmetric difference* (`^`).
+Choices class and subsets support standard set operations: *union* (`|`), *intersection* (`&`), *difference* (`-`), and *symmetric difference* (`^`).
 ```python
 PageStatus.VALID | PageStatus.INVISIBLE     # Choices(CREATED, ON_HOLD, PENDING)
 PageStatus.VALID & PageStatus.INVISIBLE     # Choices(ON_HOLD)
@@ -143,12 +143,12 @@ PageStatus.VALID.extract('ON_HOLD').get_help_text()
 ```
 
 ### Django model fields
-Better choices are not different to the original Django choices in terms of usage in models.
+Better choices are not different from the original Django choices in terms of usage in models.
 ```python
 class Page(models.Model):
     status = models.CharField(choices=PageStatus, default=PageStatus.CREATED)
 ```
-> Better choices are fully supported by Django migrations.
+> Better choices are fully supported by Django migrations and debug toolbar.
 
 ### Saving choices on models
 Better choices are compatible with standard Django models manipulation.
