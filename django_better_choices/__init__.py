@@ -235,7 +235,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         return type(f'{cls.__name__}.{name}', (cls,), {k: cls.__values[k] for k in keys})
 
     @classmethod
-    def has(cls, key: str) -> bool:
+    def has(cls, key: str) -> bool:  # pragma: no cover
         """Check if key exists in choices class."""
         __import__('warnings').warn(
             "'Choices.has()' method is deprecated, use 'Choices.has_key()'",
