@@ -1,5 +1,7 @@
 """Better choices library for Django web framework."""
 
+import sys
+
 from typing import Any, Iterable, Iterator, Optional, Tuple, TypeVar, Union, overload
 
 try:
@@ -17,8 +19,11 @@ class _Value(str):
     capitalize = casefold = center = count = encode = endswith = expandtabs = find = format = format_map = \
         index = isalnum = isalpha = isascii = isdecimal = isdigit = isidentifier = islower = isnumeric = \
         isprintable = isspace = istitle = isupper = join = ljust = lower = lstrip = maketrans = partition = \
-        removeprefix = removesuffix = replace = rfind = rindex = rjust = rpartition = rsplit = rstrip = split = \
-        splitlines = startswith = strip = swapcase = title = translate = upper = zfill = property()
+        replace = rfind = rindex = rjust = rpartition = rsplit = rstrip = split = splitlines = startswith = \
+        strip = swapcase = title = translate = upper = zfill = property()
+
+    if sys.version_info >= (3, 9):
+        removeprefix = removesuffix = property()
 
     def __new__(cls, display: Union[str, Promise], *, value: str = '', **params: Any):
         """
