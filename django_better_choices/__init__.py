@@ -122,14 +122,14 @@ class Choices(metaclass=__ChoicesMetaclass):
         https://pypi.org/project/django-better-choices/
     """
 
+    Value = _Value
+    Subset = _Subset
+
     __DefaultType = TypeVar('__DefaultType')
     __ValueType = Union[_Value, str, Promise]
 
     __keys: ClassVar[Dict[_Value, str]]
     __values: ClassVar[Dict[str, _Value]]
-
-    Value = _Value
-    Subset = _Subset
 
     @overload
     def __new__(cls) -> 'Choices': ...
