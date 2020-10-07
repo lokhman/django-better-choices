@@ -65,6 +65,24 @@ class TestCase(unittest.TestCase):
                 VAL1 = 'Display 1'
                 SUBSET1 = Choices.Subset(VAL1)
 
+        copy = self.Const.__copy__()
+        self.assertIsNot(self.Const, copy)
+        self.assertIsNot(self.Const.VAL1, copy.VAL1)
+        self.assertEqual('Const', copy.__name__)
+        self.assertEqual(len(self.Const.items()), len(copy.items()))
+
+        copy.insert('val123', 'Whatever')
+        self.assertEqual('Whatever', copy.val123.display)
+
+        with self.assertRaises(AssertionError):
+            copy.insert('', 'test')
+
+        with self.assertRaises(AssertionError):
+            copy.insert('invalid!', 'test')
+
+        with self.assertRaises(AssertionError):
+            copy.insert('val', 123.45)
+
     def test_accessors(self):
         self.assertIsInstance(self.Const.VAL1, Choices.Value)
         self.assertIsInstance(self.Const.Nested.VAL10, str)
