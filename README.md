@@ -43,7 +43,8 @@ class PageStatus(Choices):
             if hasattr(value, 'help_text')
         )
 ```
-> Overridden choices classes cannot be initialised to obtain a new instance. Initialisation will return a tuple of choice entries.
+> Choices class key can be any *public* identifier (i.e. not starting with underscore `_`).
+> Overridden choices classes cannot be initialised to obtain a new instance, calling the instance will return a tuple of choice entries.
 
 ### Inline definition
 Alternatively, the choices can be defined dynamically by creating a new `Choices` instance.
