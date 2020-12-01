@@ -65,6 +65,9 @@ class _Value(str):
     def display(self) -> str:
         return str(self.__display)
 
+    def __deepcopy__(self, memodict):
+        return self.__clone__()
+
 
 class _Subset(tuple):
     """An immutable subset of values, which is translated to inner choices class."""

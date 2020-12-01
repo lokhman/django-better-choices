@@ -1,3 +1,4 @@
+import copy
 import unittest
 
 from collections.abc import Iterable
@@ -217,6 +218,10 @@ class TestCase(unittest.TestCase):
     def test_str_methods(self):
         for method in (fn for fn in dir(str) if not fn.startswith('__')):
             self.assertIn(method, Choices.Value.__dict__)
+
+    def test_deepcopy_value(self):
+        copied_value = copy.deepcopy(self.Const.VAL1)
+        self.assertEqual('val1', copied_value)
 
 
 if __name__ == '__main__':
