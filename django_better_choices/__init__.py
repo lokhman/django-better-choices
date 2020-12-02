@@ -27,11 +27,11 @@ class ValueType(Hashable):
 
     @property
     @abstractmethod
-    def display(self) -> str: ...
+    def display(self) -> _DisplayType: ...
 
 
 class _ChoicesValue:
-    """Choices value configuration, which is compiled to the value of type `ValueType`."""
+    """Choices value configuration that is compiled to the value of type `ValueType`."""
 
     def __init__(self, display: _DisplayType, *, value: Optional[Hashable] = None, **params: Any):
         self.__value, self.__display, self.__params = value, display, params
@@ -90,7 +90,7 @@ class Choices(metaclass=__ChoicesMetaclass):
     """
     Choices class that should be overridden or initialised for constant class definition.
 
-    Examples:
+    Documentation:
         https://pypi.org/project/django-better-choices/
     """
 
@@ -109,13 +109,13 @@ class Choices(metaclass=__ChoicesMetaclass):
     @overload
     def __new__(cls, **values: __ClassValueType) -> 'Choices': ...
     @overload
-    def __new__(cls, **params: Any) -> Tuple[Tuple[str, str], ...]: ...
+    def __new__(cls, **params: Any) -> Tuple[Tuple[ValueType, _DisplayType], ...]: ...
     def __new__(cls, __name: Optional[str] = None, **kwargs: Any):
-        if cls is not Choices:
+        if cls is not Choices:  # x = Choices(...); x()
             return tuple(v.__choice_entry__ for _, v in cls.__items_iter(**kwargs))
         return type(cls.__name__ if __name is None else __name, (Choices,), kwargs)
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, **kwargs: Any):
         super().__init_subclass__(**kwargs)
 
         cls.__keys = {}
@@ -230,7 +230,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         return tuple(v for _, v in cls.__items_iter(**params))
 
     @classmethod
-    def displays(cls, **params: Any) -> Tuple[str, ...]:
+    def displays(cls, **params: Any) -> Tuple[_DisplayType, ...]:
         """Return tuple of displays of choices values."""
         return tuple(v.display for _, v in cls.__items_iter(**params))
 
