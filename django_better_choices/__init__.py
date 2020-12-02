@@ -1,9 +1,10 @@
 """Better choices library for Django web framework."""
 
-import sys
-import warnings
-
-from typing import Any, ClassVar, Dict, Iterable, Iterator, Optional, Tuple, TypeVar, Union, overload
+from abc import abstractmethod
+from typing import (
+    Any, ClassVar, Dict, Iterable, Iterator, Hashable, Optional, Tuple, Type, TypeVar, Union,
+    overload
+)
 
 try:
     from django.utils.functional import Promise
@@ -14,106 +15,74 @@ except ImportError:
 from .version import __version__
 
 
-class _Value(str):
-    """An immutable string class that contains choices value configuration."""
+_DisplayType = Union[str, Promise]
 
-    capitalize = casefold = center = count = encode = endswith = expandtabs = find = format = format_map = \
-        index = isalnum = isalpha = isascii = isdecimal = isdigit = isidentifier = islower = isnumeric = \
-        isprintable = isspace = istitle = isupper = join = ljust = lower = lstrip = maketrans = partition = \
-        replace = rfind = rindex = rjust = rpartition = rsplit = rstrip = split = splitlines = startswith = \
-        strip = swapcase = title = translate = upper = zfill = property()
 
-    if sys.version_info >= (3, 9):
-        removeprefix = removesuffix = property()
-
-    def __new__(cls, display: Union[str, Promise], *, value: str = '', **params: Any):
-        """
-        Custom value class definition to support extended functionality.
-
-        Arguments:
-            display (Union[str, Promise]): Text used to represent the value.
-            value (str): Custom value of the value (if empty, choices key lowercase will be used).
-            params: Additional value parameters.
-        """
-        self = super().__new__(cls, value)
-        self.__display = display
-        self.__params = params
-        return self
-
-    def __getattr__(self, name: str) -> Any:
-        try:
-            return self.__params[name]
-        except KeyError:
-            if hasattr(str, name):
-                def wrapper(*args, **kwargs):  # native str method
-                    return getattr(str, name)(self, *args, **kwargs)
-                return wrapper
-            raise AttributeError(f'choices class value {self!r} has no attribute {name!r}') from None
-
-    def __clone__(self, __value: str = None) -> '_Value':
-        return _Value(
-            self.__display,
-            value=self.__str__() if __value is None else __value,
-            **self.__params
-        )
+class ValueType(Hashable):
+    """Interface for compiled choices value."""
 
     @property
-    def __choice_entry__(self) -> Tuple[str, str]:
-        return self.__str__(), self.display
+    @abstractmethod
+    def __choice_entry__(self) -> Tuple[Hashable, _DisplayType]: ...
 
     @property
-    def display(self) -> str:
-        return str(self.__display)
-
-    def __deepcopy__(self, memodict):
-        return self.__clone__()
+    @abstractmethod
+    def display(self) -> str: ...
 
 
-class _Subset(tuple):
-    """An immutable subset of values, which is translated to inner choices class."""
+class _ChoicesValue:
+    """Choices value configuration, which is compiled to the value of type `ValueType`."""
 
-    def __new__(cls, *keys: str):
+    def __init__(self, display: _DisplayType, *, value: Optional[Hashable] = None, **params: Any):
+        self.__value, self.__display, self.__params = value, display, params
+
+    @property
+    def __choice_entry__(self) -> Tuple[Hashable, _DisplayType, Dict[str, Any]]:
+        return self.__value, self.__display, self.__params
+
+
+class _ChoicesSubset(tuple):
+    """A container for values that are compiled to the inner choices class."""
+
+    def __new__(cls: Type[Tuple], *keys: str):
         return super().__new__(cls, dict.fromkeys(keys).keys())
 
 
 class __ChoicesMetaclass(type):
-    def __iter__(self) -> Iterator[Tuple[str, str]]:
+    def __iter__(self: 'Choices') -> Iterator[Tuple[Hashable, _DisplayType]]:
         for value in self.values():
             yield value.__choice_entry__
 
-    def __contains__(self, value: str) -> bool:
+    def __contains__(self: 'Choices', value: Hashable) -> bool:
         try:
-            _ = self[value]
-        except KeyError:
+            self[value]
+        except ValueError:
             return False
         return True
 
-    def __copy__(self) -> 'Choices':
-        return Choices(self.__name__, **{k: v.__clone__() for k, v in self.items()})
-
-    def __str__(self) -> str:
+    def __str__(self: 'Choices') -> str:
         return f"{self.__name__}({', '.join(self.keys())})"
 
-    def __repr__(self) -> str:
+    def __repr__(self: 'Choices') -> str:
         kwargs = (f'{self.__name__!r}', *(f'{k}={v.display!r}' for k, v in self.items()))
         return f"Choices({', '.join(kwargs)})"
 
-    def __or__(self, other: 'Choices') -> 'Choices':
-        return self.__operation(other, '|', (*self.items(), *other.items()))
+    def __or__(self: 'Choices', other: 'Choices') -> 'Choices':
+        return self.__op_def(other, '|', (*self.items(), *other.items()))
 
-    def __and__(self, other: 'Choices') -> 'Choices':
-        return self.__operation(other, '&', ((k, v) for k, v in self.items() if other.has_key(k)))
+    def __and__(self: 'Choices', other: 'Choices') -> 'Choices':
+        return self.__op_def(other, '&', ((k, v) for k, v in self.items() if other.has_key(k)))
 
-    def __sub__(self, other: 'Choices') -> 'Choices':
-        return self.__operation(other, '-', ((k, v) for k, v in self.items() if not other.has_key(k)))
+    def __sub__(self: 'Choices', other: 'Choices') -> 'Choices':
+        return self.__op_def(other, '-', ((k, v) for k, v in self.items() if not other.has_key(k)))
 
-    def __xor__(self, other: 'Choices') -> 'Choices':
-        return self.__operation(other, '^', (
+    def __xor__(self: 'Choices', other: 'Choices') -> 'Choices':
+        return self.__op_def(other, '^', (
             *((k, v) for k, v in self.items() if not other.has_key(k)),
             *((k, v) for k, v in other.items() if not self.has_key(k))
         ))
 
-    def __operation(self, other: 'Choices', op: str, items: Iterable[Tuple[str, _Value]]) -> 'Choices':
+    def __op_def(self: 'Choices', other: 'Choices', op: str, items: Iterable[Tuple[str, ValueType]]) -> Type['Choices']:
         return type(f'{self.__name__}{op}{other.__name__}', (Choices,), dict(items))
 
 
@@ -125,26 +94,23 @@ class Choices(metaclass=__ChoicesMetaclass):
         https://pypi.org/project/django-better-choices/
     """
 
-    Value = _Value
-    Subset = _Subset
-
+    __ClassValueType = Union[_ChoicesValue, _ChoicesSubset, _DisplayType, ValueType]
     __DefaultType = TypeVar('__DefaultType')
-    __ValueType = Union[_Value, str, Promise]
 
-    __keys: ClassVar[Dict[_Value, str]]
-    __values: ClassVar[Dict[str, _Value]]
+    __keys: ClassVar[Dict[ValueType, str]]
+    __values: ClassVar[Dict[str, ValueType]]
 
     @overload
     def __new__(cls) -> 'Choices': ...
     @overload
     def __new__(cls, __name: str) -> 'Choices': ...
     @overload
-    def __new__(cls, __name: str, **values: __ValueType) -> 'Choices': ...
+    def __new__(cls, __name: str, **values: __ClassValueType) -> 'Choices': ...
     @overload
-    def __new__(cls, **values: __ValueType) -> 'Choices': ...
+    def __new__(cls, **values: __ClassValueType) -> 'Choices': ...
     @overload
     def __new__(cls, **params: Any) -> Tuple[Tuple[str, str], ...]: ...
-    def __new__(cls, __name: str = None, **kwargs: Union[__ValueType, Any]):
+    def __new__(cls, __name: Optional[str] = None, **kwargs: Any):
         if cls is not Choices:
             return tuple(v.__choice_entry__ for _, v in cls.__items_iter(**kwargs))
         return type(cls.__name__ if __name is None else __name, (Choices,), kwargs)
@@ -156,20 +122,61 @@ class Choices(metaclass=__ChoicesMetaclass):
         cls.__values = {}
 
         for key, value in cls.__dict__.items():
-            if not key.startswith('_') and isinstance(value, (str, Promise, _Subset)):
-                cls.insert(key, value)
+            if key.startswith('_'):
+                continue
 
-    def __class_getitem__(cls, value: str) -> _Value:
+            if isinstance(value, ValueType):
+                setattr(cls, key, value)
+                cls.__keys[value] = key
+                cls.__values[key] = value
+            elif isinstance(value, cls.Value):
+                value, display, params = value.__choice_entry__
+                if value is None:
+                    value = key.lower()
+
+                value = cls.__value_factory(key, value, display, **params)
+                if value in cls.__keys:
+                    raise ValueError(
+                        f'choices class {cls.__qualname__!r} has '
+                        f'a duplicated value {value!r} for key {key!r}'
+                    )
+
+                setattr(cls, key, value)
+                cls.__keys[value] = key
+                cls.__values[key] = value
+            elif isinstance(value, (str, Promise)):
+                value = cls.__value_factory(key, key.lower(), value)
+                setattr(cls, key, value)
+                cls.__keys[value] = key
+                cls.__values[key] = value
+            elif isinstance(value, cls.Subset):
+                setattr(cls, key, cls.extract(*value, name=key))
+
+    def __class_getitem__(cls, value: Hashable) -> ValueType:
         try:
             return cls.__values[cls.__keys[value]]
         except KeyError:
-            raise KeyError(f'value {value!r} is not found in choices class {cls.__qualname__!r}') from None
+            raise ValueError(f'value {value!r} is not found in choices class {cls.__qualname__!r}') from None
 
-    def __getattr__(self, _): ...
-    def __getitem__(self, _): ...
+    def __getattr__(self, _): ...  # not implemented
 
     @classmethod
-    def __items_iter(cls, **params: Any) -> Iterator[Tuple[str, _Value]]:
+    def __value_factory(cls, key: str, value: Hashable, display: _DisplayType, **params: Any) -> ValueType:
+        try:
+            hash(value)
+            return type(
+                f'{cls.__name__}.{key}',
+                (type(value), ValueType),
+                {**params, 'display': display, '__choice_entry__': (value, display)}
+            )(value)
+        except TypeError:
+            raise TypeError(
+                f'type {type(value).__name__!r} is not acceptable '
+                f"for choices class value {cls.__qualname__ + '.' + key!r}"
+            ) from None
+
+    @classmethod
+    def __items_iter(cls, **params: Any) -> Iterator[Tuple[str, ValueType]]:
         if not params:
             yield from cls.__values.items()
         else:
@@ -177,43 +184,14 @@ class Choices(metaclass=__ChoicesMetaclass):
                 if all(hasattr(value, k) and getattr(value, k) == v for k, v in params.items()):
                     yield key, value
 
-    @classmethod
-    def insert(cls, key: str, value: Union[_Value, str, Promise, _Subset]) -> None:
-        """Insert a new value to choices class using given key."""
-        assert key.isidentifier(), \
-            f'choices class key {key!r} should be a valid identifier'
-        assert not key.startswith('_'), \
-            f'choices class key {key!r} should not start with underscore'
-        assert isinstance(value, (str, Promise, _Subset)), \
-            f"choices class key {cls.__qualname__ + '.' + key!r} has invalid value type {type(value).__name__!r}"
-
-        if isinstance(value, _Value):
-            if value == '':
-                value = value.__clone__(key.lower())
-                setattr(cls, key, value)
-            elif value in cls.__keys:
-                raise ValueError(
-                    f"choices class key {cls.__qualname__ + '.' + key!r} "
-                    f'has a duplicated value {value!r}'
-                )
-            cls.__keys[value] = key
-            cls.__values[key] = value
-        elif isinstance(value, (str, Promise)):
-            value = _Value(value, value=key.lower())
-            setattr(cls, key, value)
-            cls.__keys[value] = key
-            cls.__values[key] = value
-        elif isinstance(value, _Subset):
-            setattr(cls, key, cls.extract(*value, name=key))
-
     @overload
     @classmethod
-    def get(cls, __value: str) -> Optional[_Value]: ...
+    def get(cls, __value: Hashable) -> Optional[ValueType]: ...
     @overload
     @classmethod
-    def get(cls, __value: str, default: __DefaultType) -> Union[_Value, __DefaultType]: ...
+    def get(cls, __value: Hashable, default: __DefaultType) -> Union[ValueType, __DefaultType]: ...
     @classmethod
-    def get(cls, __value: str, default: __DefaultType = None) -> Union[_Value, __DefaultType]:
+    def get(cls, __value: Hashable, default: Optional[__DefaultType] = None) -> Union[ValueType, __DefaultType]:
         """Return value if it exists in choices class, otherwise return default or None."""
         try:
             return cls.__values[cls.__keys[__value]]
@@ -222,12 +200,12 @@ class Choices(metaclass=__ChoicesMetaclass):
 
     @overload
     @classmethod
-    def get_key(cls, __value: str) -> Optional[_Value]: ...
+    def get_key(cls, __value: Hashable) -> Optional[ValueType]: ...
     @overload
     @classmethod
-    def get_key(cls, __value: str, default: __DefaultType) -> Union[_Value, __DefaultType]: ...
+    def get_key(cls, __value: Hashable, default: __DefaultType) -> Union[ValueType, __DefaultType]: ...
     @classmethod
-    def get_key(cls, __value: str, default: __DefaultType = None) -> Union[_Value, __DefaultType]:
+    def get_key(cls, __value: Hashable, default: Optional[__DefaultType] = None) -> Union[ValueType, __DefaultType]:
         """Return key if value exists in choices class, otherwise return default or None."""
         return cls.__keys.get(__value, default)
 
@@ -237,7 +215,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         return __key in cls.__values
 
     @classmethod
-    def items(cls, **params: Any) -> Tuple[Tuple[str, _Value], ...]:
+    def items(cls, **params: Any) -> Tuple[Tuple[str, ValueType], ...]:
         """Return tuple of key-value tuples as ((K1, V1), (K2, V2), etc)."""
         return tuple(cls.__items_iter(**params))
 
@@ -247,7 +225,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         return tuple(k for k, _ in cls.__items_iter(**params))
 
     @classmethod
-    def values(cls, **params: Any) -> Tuple[_Value, ...]:
+    def values(cls, **params: Any) -> Tuple[ValueType, ...]:
         """Return tuple of values as (V1, V2, etc)."""
         return tuple(v for _, v in cls.__items_iter(**params))
 
@@ -257,31 +235,12 @@ class Choices(metaclass=__ChoicesMetaclass):
         return tuple(v.display for _, v in cls.__items_iter(**params))
 
     @classmethod
-    def extract(cls, __key: str, *keys: str, name: str = 'Subset') -> 'Choices':
+    def extract(cls, __key: str, *keys: str, name: str = 'Subset') -> Type['Choices']:
         """Dynamically extract subset of values from choices class."""
         return type(f'{cls.__name__}.{name}', (cls,), {k: cls.__values[k] for k in (__key, *keys)})
 
-    @classmethod
-    def has(cls, key: str) -> bool:  # pragma: no cover
-        """Check if key exists in choices class."""
-        warnings.warn(
-            "'Choices.has()' method is deprecated, use 'Choices.has_key()'",
-            DeprecationWarning
-        )
-        return cls.has_key(key)
-
-    @classmethod
-    def find(cls, value: str) -> Optional[Tuple[str, _Value]]:  # pragma: no cover
-        """Return key-value tuple if the given value exists in the choices, otherwise return None."""
-        warnings.warn(
-            "'Choices.find()' method is deprecated, use 'Choices.get()' and 'Choices.get_key()'",
-            DeprecationWarning
-        )
-        try:
-            key = cls.__keys[value]
-        except KeyError:
-            return None
-        return key, cls.__values[key]
+    Value = _ChoicesValue
+    Subset = _ChoicesSubset
 
 
-__all__ = ('Choices',)
+__all__ = ('Choices', 'ValueType')
