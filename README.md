@@ -62,7 +62,7 @@ value_on_hold = getattr(PageStatus, 'ON_HOLD')
 ```
 
 ### Values and value parameters
-`Choices.Value` can hold any `typing.Hashable` value and when compiled equals to this value. In addition to `display` parameter, other optional parameters can be specified in `Choices.Value` constructor (see class definition example).
+`Choices.Value` can hold any `typing.Hashable` value and once compiled equals to this value. In addition to `display` parameter, other optional parameters can be specified in `Choices.Value` constructor (see class definition example).
 ```python
 print( PageStatus.CREATED )                # 'created'
 print( PageStatus.ON_HOLD )                # 'custom_on_hold'
@@ -92,7 +92,7 @@ Search in choices is performed by value.
 'created' in PageStatus                    # True
 'custom_on_hold' in PageStatus             # True
 'on_hold' in PageStatus                    # False
-value = PageStatus['custom_on_hold']       # Choices.Value
+value = PageStatus['custom_on_hold']       # ValueType('custom_on_hold')
 value = PageStatus.get('on_hold', 123.45)  # 123.45
 key = PageStatus.get_key('created')        # 'CREATED'
 ```
@@ -103,7 +103,7 @@ Subsets are used to group several values together (see class definition example)
 'custom_on_hold' in PageStatus.VALID       # True
 PageStatus.CREATED in PageStatus.VALID     # True
 ```
-> `Choices.Subset` is a subclass of `tuple`, which is translated to inner choices class after definition. All internal or custom choices class methods or properties will be available in a subset class (see "Custom methods" section).
+> `Choices.Subset` is a subclass of `tuple`, which is compiled to inner choices class after its definition. All internal or custom choices class methods or properties will be available in a subset class (see "Custom methods" section).
 
 ### Extract subset
 Subsets of choices can be dynamically extracted with `extract()` method.
