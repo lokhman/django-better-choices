@@ -15,7 +15,7 @@ from .version import __version__
 _DisplayType = Union[str, Promise]
 
 
-class ValueType(Hashable):
+class ValueType:
     """Interface for compiled choices value."""
 
     @property
@@ -161,16 +161,19 @@ class Choices(metaclass=__ChoicesMetaclass):
     def __value_factory(cls, key: str, value: Hashable, display: _DisplayType, **params: Any) -> ValueType:
         try:
             hash(value)
-            return type(
-                f"{cls.__name__}.{key}",
+            _type = type(
+                f"{cls.__qualname__.replace('.', '_')}_{key}",
                 (type(value), ValueType),
                 {**params, "display": display, "__choice_entry__": (value, display)},
-            )(value)
+            )
         except TypeError:
             raise TypeError(
                 f"type {type(value).__name__!r} is not acceptable "
                 f"for choices class value {cls.__qualname__ + '.' + key!r}"
             ) from None
+
+        globals()[_type.__name__] = _type  # for pickle
+        return _type(value)
 
     @classmethod
     def __iter_items(cls, **params: Any) -> Iterator[Tuple[str, ValueType]]:

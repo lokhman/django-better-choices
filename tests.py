@@ -1,4 +1,5 @@
 import copy
+import pickle
 import unittest
 
 from collections.abc import Iterable
@@ -99,7 +100,7 @@ class TestCase(unittest.TestCase):
 
         with self.assertRaises(AttributeError) as ctx:  # invalid value parameter
             _ = TestConst.VAL5.param3
-        self.assertEqual("'TestConst.VAL5' object has no attribute 'param3'", str(ctx.exception))
+        self.assertEqual("'TestConst_VAL5' object has no attribute 'param3'", str(ctx.exception))
 
     def test_search(self):
         self.assertIn("val1", TestConst)
@@ -227,6 +228,34 @@ class TestCase(unittest.TestCase):
 
         self.assertIsNot(TestConst.VAL4, copy.copy(TestConst.VAL4))
         self.assertIsNot(TestConst.VAL7, copy.deepcopy(TestConst.VAL7))
+
+    def test_pickle(self):
+        def factory1():
+            class Local(Choices):
+                VAL = "Display F1"
+
+            return Local
+
+        def factory2():
+            class Local(Choices):
+                VAL = Choices.Value("Display F2", param=123)
+
+            return Local
+
+        choices1 = factory1()
+        val1 = pickle.loads(pickle.dumps(choices1.VAL))
+        self.assertEqual("Display F1", val1.display)
+        self.assertEqual("TestCase_test_pickle_<locals>_factory1_<locals>_Local_VAL", type(choices1.VAL).__name__)
+
+        choices2 = factory2()
+        val2 = pickle.loads(pickle.dumps(choices2.VAL))
+        self.assertEqual(123, val2.param)
+        self.assertEqual("TestCase_test_pickle_<locals>_factory2_<locals>_Local_VAL", type(choices2.VAL).__name__)
+
+        self.assertIs(type(val1), type(choices1.extract("VAL").VAL))
+        self.assertEqual("Display F1", pickle.loads(pickle.dumps(choices1.VAL)).display)
+
+        self.assertEqual((*TestConst,), pickle.loads(pickle.dumps((*TestConst,))))
 
 
 if __name__ == "__main__":
