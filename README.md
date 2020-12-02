@@ -33,7 +33,7 @@ class PageStatus(Choices):
     INVISIBLE = Choices.Subset('PENDING', 'ON_HOLD')
 
     class InternalStatus(Choices):
-        REVIEW = 'On Review'
+        REVIEW = _('On Review')
 
     @classmethod
     def get_help_text(cls):
@@ -49,7 +49,7 @@ class PageStatus(Choices):
 ### Inline definition
 Alternatively, the choices can be defined dynamically by creating a new `Choices` instance.
 ```python
-PageStatus = Choices('PageStatus', SUCCESS='Success', FAIL='Error')
+PageStatus = Choices('PageStatus', SUCCESS='Success', FAIL='Error', VALID=Choices.Subset('SUCCESS'))
 ```
 > The first `name` parameter of `Choices` constructor is optional and required only for better representation of the returned instance.
 
@@ -62,7 +62,7 @@ value_on_hold = getattr(PageStatus, 'ON_HOLD')
 ```
 
 ### Values and value parameters
-`Choices.Value` is a subclass of `str` and equals to its value. In addition to `display` parameter, other optional parameters can be specified in `Choices.Value` constructor (see class definition example).
+`Choices.Value` can hold any `typing.Hashable` value and when compiled equals to this value. In addition to `display` parameter, other optional parameters can be specified in `Choices.Value` constructor (see class definition example).
 ```python
 print( PageStatus.CREATED )                # 'created'
 print( PageStatus.ON_HOLD )                # 'custom_on_hold'
@@ -71,8 +71,20 @@ print( PageStatus.PENDING.help_text )      # 'This set status to pending'
 
 PageStatus.ON_HOLD == 'custom_on_hold'     # True
 PageStatus.CREATED == PageStatus.CREATED   # True
+
+
+class Rating(Choices):
+    VERY_POOR = Choices.Value('Very poor', value=1)
+    POOR = Choices.Value('Poor', value=2)
+    OKAY = Choices.Value('Okay', value=3, alt='Not great, not terrible')
+    GOOD = Choices.Value('Good', value=4)
+    VERY_GOOD = Choices.Value('Very good', value=5)
+
+print( Rating.VERY_GOOD )                  # 5
+print( Rating.OKAY.alt )                   # 'Not great, not terrible'
+print( {4: 'Alright'}[Rating.GOOD] )       # 'Alright'
 ```
-> `Choices.Value` is an immutable string class, which instance cannot be modified after initialisation. Native non-magic `str` methods can be overridden in `Choices.Value` custom parameters. `Choices.Value` behaves like a normal string, e.g. `{'val1': 'something'}[CHOICES.VAL1] == 'something'`.
+> Instance of `Choices.Value` class cannot be modified after initialisation. All native non-magic methods can be overridden in `Choices.Value` custom parameters.
 
 ### Search in choices
 Search in choices is performed by value.
