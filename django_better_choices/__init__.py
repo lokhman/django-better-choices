@@ -112,7 +112,7 @@ class Choices(metaclass=__ChoicesMetaclass):
     def __new__(cls, **params: Any) -> Tuple[Tuple[ValueType, _DisplayType], ...]: ...
     def __new__(cls, __name: Optional[str] = None, **kwargs: Any):
         if cls is not Choices:  # x = Choices(...); x()
-            return tuple(v.__choice_entry__ for _, v in cls.__items_iter(**kwargs))
+            return tuple(v.__choice_entry__ for _, v in cls.__iter_items(**kwargs))
         return type(cls.__name__ if __name is None else __name, (Choices,), kwargs)
 
     def __init_subclass__(cls, **kwargs: Any):
@@ -176,13 +176,10 @@ class Choices(metaclass=__ChoicesMetaclass):
             ) from None
 
     @classmethod
-    def __items_iter(cls, **params: Any) -> Iterator[Tuple[str, ValueType]]:
-        if params:
-            for key, value in cls.__values.items():
-                if all(hasattr(value, k) and getattr(value, k) == v for k, v in params.items()):
-                    yield key, value
-        else:
-            yield from cls.__values.items()
+    def __iter_items(cls, **params: Any) -> Iterator[Tuple[str, ValueType]]:
+        for key, value in cls.__values.items():
+            if all(hasattr(value, k) and getattr(value, k) == v for k, v in params.items()):
+                yield key, value
 
     @overload
     @classmethod
@@ -217,22 +214,22 @@ class Choices(metaclass=__ChoicesMetaclass):
     @classmethod
     def items(cls, **params: Any) -> Tuple[Tuple[str, ValueType], ...]:
         """Return tuple of key-value tuples as ((K1, V1), (K2, V2), etc)."""
-        return tuple(cls.__items_iter(**params))
+        return tuple(cls.__iter_items(**params))
 
     @classmethod
     def keys(cls, **params: Any) -> Tuple[str, ...]:
         """Return tuple of keys of choices as (K1, K2, etc)."""
-        return tuple(k for k, _ in cls.__items_iter(**params))
+        return tuple(k for k, _ in cls.__iter_items(**params))
 
     @classmethod
     def values(cls, **params: Any) -> Tuple[ValueType, ...]:
         """Return tuple of values as (V1, V2, etc)."""
-        return tuple(v for _, v in cls.__items_iter(**params))
+        return tuple(v for _, v in cls.__iter_items(**params))
 
     @classmethod
     def displays(cls, **params: Any) -> Tuple[_DisplayType, ...]:
         """Return tuple of displays of choices values."""
-        return tuple(v.display for _, v in cls.__items_iter(**params))
+        return tuple(v.display for _, v in cls.__iter_items(**params))
 
     @classmethod
     def extract(cls, __key: str, *keys: str, name: str = 'Subset') -> Type['Choices']:
