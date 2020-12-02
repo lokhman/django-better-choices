@@ -1,10 +1,7 @@
 """Better choices library for Django web framework."""
 
 from abc import abstractmethod
-from typing import (
-    Any, ClassVar, Dict, Iterable, Iterator, Hashable, Optional, Tuple, Type, TypeVar, Union,
-    overload
-)
+from typing import Any, ClassVar, Dict, Hashable, Iterable, Iterator, Optional, Tuple, Type, TypeVar, Union, overload
 
 try:
     from django.utils.functional import Promise
@@ -49,41 +46,41 @@ class _ChoicesSubset(tuple):
 
 
 class __ChoicesMetaclass(type):
-    def __iter__(self: 'Choices') -> Iterator[Tuple[Hashable, _DisplayType]]:
+    def __iter__(self: "Choices") -> Iterator[Tuple[Hashable, _DisplayType]]:
         for value in self.values():
             yield value.__choice_entry__
 
-    def __contains__(self: 'Choices', value: Hashable) -> bool:
+    def __contains__(self: "Choices", value: Hashable) -> bool:
         try:
             self[value]
         except ValueError:
             return False
         return True
 
-    def __str__(self: 'Choices') -> str:
+    def __str__(self: "Choices") -> str:
         return f"{self.__name__}({', '.join(self.keys())})"
 
-    def __repr__(self: 'Choices') -> str:
-        kwargs = (f'{self.__name__!r}', *(f'{k}={v.display!r}' for k, v in self.items()))
+    def __repr__(self: "Choices") -> str:
+        kwargs = (f"{self.__name__!r}", *(f"{k}={v.display!r}" for k, v in self.items()))
         return f"Choices({', '.join(kwargs)})"
 
-    def __or__(self: 'Choices', other: 'Choices') -> 'Choices':
-        return self.__op_def(other, '|', (*self.items(), *other.items()))
+    def __or__(self: "Choices", other: "Choices") -> "Choices":
+        return self.__op_def(other, "|", (*self.items(), *other.items()))
 
-    def __and__(self: 'Choices', other: 'Choices') -> 'Choices':
-        return self.__op_def(other, '&', ((k, v) for k, v in self.items() if other.has_key(k)))
+    def __and__(self: "Choices", other: "Choices") -> "Choices":
+        return self.__op_def(other, "&", ((k, v) for k, v in self.items() if other.has_key(k)))
 
-    def __sub__(self: 'Choices', other: 'Choices') -> 'Choices':
-        return self.__op_def(other, '-', ((k, v) for k, v in self.items() if not other.has_key(k)))
+    def __sub__(self: "Choices", other: "Choices") -> "Choices":
+        return self.__op_def(other, "-", ((k, v) for k, v in self.items() if not other.has_key(k)))
 
-    def __xor__(self: 'Choices', other: 'Choices') -> 'Choices':
-        return self.__op_def(other, '^', (
+    def __xor__(self: "Choices", other: "Choices") -> "Choices":
+        return self.__op_def(other, "^", (
             *((k, v) for k, v in self.items() if not other.has_key(k)),
-            *((k, v) for k, v in other.items() if not self.has_key(k))
+            *((k, v) for k, v in other.items() if not self.has_key(k)),
         ))
 
-    def __op_def(self: 'Choices', other: 'Choices', op: str, items: Iterable[Tuple[str, ValueType]]) -> Type['Choices']:
-        return type(f'{self.__name__}{op}{other.__name__}', (Choices,), dict(items))
+    def __op_def(self: "Choices", other: "Choices", op: str, items: Iterable[Tuple[str, ValueType]]) -> Type["Choices"]:
+        return type(f"{self.__name__}{op}{other.__name__}", (Choices,), dict(items))
 
 
 class Choices(metaclass=__ChoicesMetaclass):
@@ -95,19 +92,19 @@ class Choices(metaclass=__ChoicesMetaclass):
     """
 
     __ClassValueType = Union[_ChoicesValue, _ChoicesSubset, _DisplayType, ValueType]
-    __DefaultType = TypeVar('__DefaultType')
+    __DefaultType = TypeVar("__DefaultType")
 
     __keys: ClassVar[Dict[ValueType, str]]
     __values: ClassVar[Dict[str, ValueType]]
 
     @overload
-    def __new__(cls) -> 'Choices': ...
+    def __new__(cls) -> "Choices": ...
     @overload
-    def __new__(cls, __name: str) -> 'Choices': ...
+    def __new__(cls, __name: str) -> "Choices": ...
     @overload
-    def __new__(cls, __name: str, **values: __ClassValueType) -> 'Choices': ...
+    def __new__(cls, __name: str, **values: __ClassValueType) -> "Choices": ...
     @overload
-    def __new__(cls, **values: __ClassValueType) -> 'Choices': ...
+    def __new__(cls, **values: __ClassValueType) -> "Choices": ...
     @overload
     def __new__(cls, **params: Any) -> Tuple[Tuple[ValueType, _DisplayType], ...]: ...
     def __new__(cls, __name: Optional[str] = None, **kwargs: Any):
@@ -122,7 +119,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         cls.__values = {}
 
         for key, value in cls.__dict__.items():
-            if key.startswith('_'):
+            if key.startswith("_"):
                 continue
 
             if isinstance(value, ValueType):
@@ -137,8 +134,8 @@ class Choices(metaclass=__ChoicesMetaclass):
                 value = cls.__value_factory(key, value, display, **params)
                 if value in cls.__keys:
                     raise ValueError(
-                        f'choices class {cls.__qualname__!r} has '
-                        f'a duplicated value {value!r} for key {key!r}'
+                        f"choices class {cls.__qualname__!r} has " 
+                        f"a duplicated value {value!r} for key {key!r}"
                     )
 
                 setattr(cls, key, value)
@@ -156,7 +153,7 @@ class Choices(metaclass=__ChoicesMetaclass):
         try:
             return cls.__values[cls.__keys[value]]
         except KeyError:
-            raise ValueError(f'value {value!r} is not found in choices class {cls.__qualname__!r}') from None
+            raise ValueError(f"value {value!r} is not found in choices class {cls.__qualname__!r}") from None
 
     def __getattr__(self, _): ...  # not implemented
 
@@ -165,13 +162,13 @@ class Choices(metaclass=__ChoicesMetaclass):
         try:
             hash(value)
             return type(
-                f'{cls.__name__}.{key}',
+                f"{cls.__name__}.{key}",
                 (type(value), ValueType),
-                {**params, 'display': display, '__choice_entry__': (value, display)}
+                {**params, "display": display, "__choice_entry__": (value, display)},
             )(value)
         except TypeError:
             raise TypeError(
-                f'type {type(value).__name__!r} is not acceptable '
+                f"type {type(value).__name__!r} is not acceptable "
                 f"for choices class value {cls.__qualname__ + '.' + key!r}"
             ) from None
 
@@ -232,12 +229,12 @@ class Choices(metaclass=__ChoicesMetaclass):
         return tuple(v.display for _, v in cls.__iter_items(**params))
 
     @classmethod
-    def extract(cls, __key: str, *keys: str, name: str = 'Subset') -> Type['Choices']:
+    def extract(cls, __key: str, *keys: str, name: str = "Subset") -> Type["Choices"]:
         """Dynamically extract subset of values from choices class."""
-        return type(f'{cls.__name__}.{name}', (cls,), {k: cls.__values[k] for k in (__key, *keys)})
+        return type(f"{cls.__name__}.{name}", (cls,), {k: cls.__values[k] for k in (__key, *keys)})
 
     Value = _ChoicesValue
     Subset = _ChoicesSubset
 
 
-__all__ = ('Choices', 'ValueType')
+__all__ = ("Choices", "ValueType")
