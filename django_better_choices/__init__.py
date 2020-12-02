@@ -177,12 +177,12 @@ class Choices(metaclass=__ChoicesMetaclass):
 
     @classmethod
     def __items_iter(cls, **params: Any) -> Iterator[Tuple[str, ValueType]]:
-        if not params:
-            yield from cls.__values.items()
-        else:
+        if params:
             for key, value in cls.__values.items():
                 if all(hasattr(value, k) and getattr(value, k) == v for k, v in params.items()):
                     yield key, value
+        else:
+            yield from cls.__values.items()
 
     @overload
     @classmethod
