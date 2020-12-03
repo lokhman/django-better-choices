@@ -1,4 +1,5 @@
 import copy
+import json
 import pickle
 import unittest
 
@@ -29,6 +30,10 @@ class TestChoices(Choices):
     class Nested(Choices):
         VAL10 = "Display 10"
         VAL20 = "Display 20"
+
+    @classmethod
+    def get_upper_displays(cls):
+        return *map(str.upper, cls.displays()),
 
 
 class TestCase(unittest.TestCase):
@@ -222,6 +227,14 @@ class TestCase(unittest.TestCase):
         self.assertEqual(("VAL1", "VAL2", "VAL5"), symmetric_difference.keys())
         self.assertEqual((TestChoices.VAL1, TestChoices.VAL2, TestChoices.VAL5), symmetric_difference.values())
 
+    def test_custom_methods(self):
+        self.assertEqual(
+            ("DISPLAY 1", "DISPLAY 2", "DISPLAY 3", "DISPLAY 4", "DISPLAY 5", "DISPLAY 6", "DISPLAY 7"),
+            TestChoices.get_upper_displays(),
+        )
+        self.assertEqual(("DISPLAY 3", "DISPLAY 5"), TestChoices.SUBSET2.get_upper_displays())
+        self.assertEqual(("DISPLAY 1", "DISPLAY 7"), TestChoices.extract("VAL1", "VAL7").get_upper_displays())
+
     def test_copy(self):
         self.assertEqual("val1", copy.copy(TestChoices.VAL1))
         self.assertEqual("value-3", copy.copy(TestChoices.VAL3))
@@ -236,13 +249,11 @@ class TestCase(unittest.TestCase):
         def factory1():
             class Local(Choices):
                 VAL = "Display F1"
-
             return Local
 
         def factory2():
             class Local(Choices):
                 VAL = Choices.Value("Display F2", param=123)
-
             return Local
 
         choices1 = factory1()
@@ -258,7 +269,15 @@ class TestCase(unittest.TestCase):
         self.assertIs(type(val1), type(choices1.extract("VAL").VAL))
         self.assertEqual("Display F1", pickle.loads(pickle.dumps(choices1.VAL)).display)
 
-        self.assertEqual((*TestChoices,), pickle.loads(pickle.dumps((*TestChoices,))))
+        self.assertEqual([*TestChoices], pickle.loads(pickle.dumps([*TestChoices])))
+
+    def test_json(self):
+        self.assertEqual('"value-3"', json.dumps(TestChoices.VAL3))
+        self.assertEqual(
+            '[["val1", "Display 1"], ["val2", "Display 2"], ["value-3", "Display 3"], '
+            '["val4", "Display 4"], ["val5", "Display 5"], [[1, 2, 3], "Display 6"], [7, "Display 7"]]',
+            json.dumps([*TestChoices]),
+        )
 
 
 if __name__ == "__main__":
