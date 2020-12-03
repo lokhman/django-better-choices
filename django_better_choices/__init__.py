@@ -16,7 +16,7 @@ _DisplayType = Union[str, Promise]
 
 
 class ValueType:
-    """Interface for compiled choices value."""
+    """Interface for compiled choices value to be used for type checking."""
 
     @property
     @abstractmethod
@@ -108,7 +108,7 @@ class Choices(metaclass=__ChoicesMetaclass):
     @overload
     def __new__(cls, **params: Any) -> Tuple[Tuple[ValueType, _DisplayType], ...]: ...
     def __new__(cls, __name: Optional[str] = None, **kwargs: Any):
-        if cls is not Choices:  # x = Choices(...); x()
+        if cls is not Choices:  # x = Choices(...); x(**params)
             return tuple(v.__choice_entry__ for _, v in cls.__iter_items(**kwargs))
         return type(cls.__name__ if __name is None else __name, (Choices,), kwargs)
 
@@ -172,7 +172,7 @@ class Choices(metaclass=__ChoicesMetaclass):
                 f"for choices class value {cls.__qualname__ + '.' + key!r}"
             ) from None
 
-        globals()[_type.__name__] = _type  # for pickle
+        globals()[_type.__name__] = _type  # pickle support
         return _type(value)
 
     @classmethod
