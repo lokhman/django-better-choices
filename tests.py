@@ -33,7 +33,7 @@ class TestChoices(Choices):
 
     @classmethod
     def get_upper_displays(cls):
-        return *map(str.upper, cls.displays()),
+        return tuple(map(str.upper, cls.displays()))
 
 
 class TestCase(unittest.TestCase):
