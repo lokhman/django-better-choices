@@ -1,6 +1,6 @@
 import setuptools
 
-kwargs = {"version": "1.14"}
+kwargs = {"version": "1.15"}
 
 with open("README.md", "r") as f:
     kwargs["long_description"] = f.read()
@@ -14,7 +14,7 @@ setuptools.setup(
     keywords=["django", "choices"],
     license="MIT",
     url="https://github.com/lokhman/django-better-choices",
-    download_url=f'https://github.com/lokhman/django-better-choices/tarball/{kwargs["version"]}',
+    download_url=f"https://github.com/lokhman/django-better-choices/tarball/{kwargs['version']}",
     classifiers=[
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
