@@ -1,5 +1,3 @@
-"""https://github.com/lokhman/django-better-choices/releases"""
-
 import pkg_resources
 
 try:

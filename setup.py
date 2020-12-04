@@ -1,10 +1,10 @@
 import setuptools
 
-kwargs = {"version": "1.15"}
+attrs = {"version": "1.15"}
 
-with open("README.md", "r") as f:
-    kwargs["long_description"] = f.read()
-    kwargs["long_description_content_type"] = "text/markdown"
+with open("README.md") as f:
+    attrs["long_description"] = f.read()
+    attrs["long_description_content_type"] = "text/markdown"
 
 setuptools.setup(
     name="django-better-choices",
@@ -14,7 +14,7 @@ setuptools.setup(
     keywords=["django", "choices"],
     license="MIT",
     url="https://github.com/lokhman/django-better-choices",
-    download_url=f"https://github.com/lokhman/django-better-choices/tarball/{kwargs['version']}",
+    download_url=f"https://github.com/lokhman/django-better-choices/tarball/{attrs['version']}",
     classifiers=[
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
@@ -26,5 +26,5 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     python_requires=">=3.7",
     zip_safe=True,
-    **kwargs,
+    **attrs,
 )
