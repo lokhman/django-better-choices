@@ -108,8 +108,15 @@ PageStatus.CREATED in PageStatus.VALID     # True
 ### Extract subset
 Subsets of choices can be dynamically extracted with `extract()` method.
 ```python
-PageStatus.extract('CREATED', 'ON_HOLD')   # ~= PageStatus.VALID
+PageStatus.extract('CREATED', 'ON_HOLD')   # Choices('PageStatus.Subset', CREATED, ON_HOLD)
 PageStatus.VALID.extract('ON_HOLD')        # Choices('PageStatus.VALID.Subset', ON_HOLD)
+```
+
+### Exclude values
+The opposite action to `extract()` is `exclude()`. It is used to exclude values from choices class or a subset and return remaining values as a new subset.
+```python
+PageStatus.exclude('CREATED', 'ON_HOLD')   # Choices('PageStatus.Subset', PENDING)
+PageStatus.VALID.exclude('ON_HOLD')        # Choices('PageStatus.VALID.Subset', CREATED)
 ```
 
 ### Choices iteration

@@ -233,8 +233,13 @@ class Choices(metaclass=__ChoicesMetaclass):
 
     @classmethod
     def extract(cls, __key: str, *keys: str, name: str = "Subset") -> Type["Choices"]:
-        """Dynamically extract subset of values from choices class."""
+        """Extract values from choices class and return a new subset."""
         return type(f"{cls.__name__}.{name}", (cls,), {k: cls.__values[k] for k in (__key, *keys)})
+
+    @classmethod
+    def exclude(cls, __key: str, *keys: str, name: str = "Subset") -> Type["Choices"]:
+        """Exclude values from choices class and return remaining values as a new subset."""
+        return type(f"{cls.__name__}.{name}", (cls,), {k: v for v, k in cls.__keys.items() if k not in {__key, *keys}})
 
     Value = _ChoicesValue
     Subset = _ChoicesSubset

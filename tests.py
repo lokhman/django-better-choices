@@ -202,9 +202,18 @@ class TestCase(unittest.TestCase):
         self.assertEqual("TestChoices.Subset", choices_extract.__name__)
         self.assertEqual(("val2", "val5"), choices_extract.values())
 
-        subset_extract = TestChoices.SUBSET1.extract("VAL1", "VAL3", name="SPECIAL")
-        self.assertEqual("TestChoices.SUBSET1.SPECIAL", subset_extract.__name__)
+        subset_extract = TestChoices.SUBSET1.extract("VAL1", "VAL3", name="EXTRACTED")
+        self.assertEqual("TestChoices.SUBSET1.EXTRACTED", subset_extract.__name__)
         self.assertEqual(("val1", "value-3"), subset_extract.values())
+
+    def test_exclude(self):
+        choices_exclude = TestChoices.exclude("VAL2", "VAL5")
+        self.assertEqual("TestChoices.Subset", choices_exclude.__name__)
+        self.assertEqual(("val1", "value-3", "val4", (1, 2, 3), 7), choices_exclude.values())
+
+        subset_exclude = TestChoices.SUBSET1.exclude("VAL1", "VAL3", name="EXCLUDED")
+        self.assertEqual("TestChoices.SUBSET1.EXCLUDED", subset_exclude.__name__)
+        self.assertEqual(("val2",), subset_exclude.values())
 
     def test_operations(self):
         union = TestChoices.SUBSET1 | TestChoices.SUBSET2
