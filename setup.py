@@ -1,6 +1,6 @@
 import setuptools
 
-attrs = {"version": "1.15"}
+attrs = {"version": "1.16"}
 
 with open("README.md") as f:
     attrs["long_description"] = f.read()
