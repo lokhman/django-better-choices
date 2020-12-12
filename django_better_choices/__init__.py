@@ -1,7 +1,13 @@
 """Better choices library for Django web framework."""
 
+from __future__ import annotations
+
 from abc import abstractmethod
-from typing import Any, ClassVar, Dict, Hashable, Iterable, Iterator, Optional, Tuple, Type, TypeVar, Union, overload
+from sys import version_info
+from typing import (
+    Any, ClassVar, Dict, Hashable, Iterable, Iterator, Optional, Tuple, Type, TypeVar, Union,
+    cast, overload,
+)
 
 try:
     from django.utils.functional import Promise
@@ -12,15 +18,29 @@ except ImportError:
 from .version import __version__
 
 
+SUPPORT_PROTOCOLS = version_info >= (3, 8)
+
+if SUPPORT_PROTOCOLS:
+    from typing import Protocol, runtime_checkable
+else:
+    def runtime_checkable(cls):
+        return type(cls.__name__, (), dict(cls.__dict__))
+
+    class Protocol:
+        pass
+
+
 _DisplayType = Union[str, Promise]
+_ChoiceEntryType = Tuple[Hashable, _DisplayType]
 
 
-class ValueType:
+@runtime_checkable
+class ValueType(Hashable, Protocol):
     """Interface for compiled choices value to be used for type checking."""
 
     @property
     @abstractmethod
-    def __choice_entry__(self) -> Tuple[Hashable, _DisplayType]: ...
+    def __choice_entry__(self) -> _ChoiceEntryType: ...
 
     @property
     @abstractmethod
@@ -41,46 +61,46 @@ class _ChoicesValue:
 class _ChoicesSubset(tuple):
     """A container for values that are compiled to the inner choices class."""
 
-    def __new__(cls: Type[Tuple], *keys: str):
+    def __new__(cls, *keys: str) -> Tuple[str, ...]:
         return super().__new__(cls, dict.fromkeys(keys).keys())
 
 
 class __ChoicesMetaclass(type):
-    def __iter__(self: "Choices") -> Iterator[Tuple[Hashable, _DisplayType]]:
+    def __iter__(self: Choices) -> Iterator[_ChoiceEntryType]:
         for value in self.values():
             yield value.__choice_entry__
 
-    def __contains__(self: "Choices", value: Hashable) -> bool:
+    def __contains__(self: Choices, value: Hashable) -> bool:
         try:
             self[value]
         except ValueError:
             return False
         return True
 
-    def __str__(self: "Choices") -> str:
+    def __str__(self: Choices) -> str:
         return f"{self.__name__}({', '.join(self.keys())})"
 
-    def __repr__(self: "Choices") -> str:
+    def __repr__(self: Choices) -> str:
         kwargs = (f"{self.__name__!r}", *(f"{k}={v.display!r}" for k, v in self.items()))
         return f"Choices({', '.join(kwargs)})"
 
-    def __or__(self: "Choices", other: "Choices") -> "Choices":
+    def __or__(self: Choices, other: Choices) -> Choices:
         return self.__op_def(other, "|", (*self.items(), *other.items()))
 
-    def __and__(self: "Choices", other: "Choices") -> "Choices":
+    def __and__(self: Choices, other: Choices) -> Choices:
         return self.__op_def(other, "&", ((k, v) for k, v in self.items() if other.has_key(k)))
 
-    def __sub__(self: "Choices", other: "Choices") -> "Choices":
+    def __sub__(self: Choices, other: Choices) -> Choices:
         return self.__op_def(other, "-", ((k, v) for k, v in self.items() if not other.has_key(k)))
 
-    def __xor__(self: "Choices", other: "Choices") -> "Choices":
+    def __xor__(self: Choices, other: Choices) -> Choices:
         return self.__op_def(other, "^", (
             *((k, v) for k, v in self.items() if not other.has_key(k)),
             *((k, v) for k, v in other.items() if not self.has_key(k)),
         ))
 
-    def __op_def(self: "Choices", other: "Choices", op: str, items: Iterable[Tuple[str, ValueType]]) -> Type["Choices"]:
-        return type(f"{self.__name__}{op}{other.__name__}", (Choices,), dict(items))
+    def __op_def(self: Choices, other: Choices, op: str, items: Iterable[Tuple[str, ValueType]]) -> Type[Choices]:
+        return cast(Type[Choices], type(f"{self.__name__}{op}{other.__name__}", (Choices,), dict(items)))
 
 
 class Choices(metaclass=__ChoicesMetaclass):
@@ -98,19 +118,19 @@ class Choices(metaclass=__ChoicesMetaclass):
     __values: ClassVar[Dict[str, ValueType]]
 
     @overload
-    def __new__(cls) -> "Choices": ...
+    def __new__(cls) -> Type[Choices]: ...
     @overload
-    def __new__(cls, __name: str) -> "Choices": ...
+    def __new__(cls, __name: str) -> Type[Choices]: ...
     @overload
-    def __new__(cls, __name: str, **values: __ClassValueType) -> "Choices": ...
+    def __new__(cls, __name: str, **values: __ClassValueType) -> Type[Choices]: ...
     @overload
-    def __new__(cls, **values: __ClassValueType) -> "Choices": ...
+    def __new__(cls, **values: __ClassValueType) -> Type[Choices]: ...
     @overload
-    def __new__(cls, **params: Any) -> Tuple[Tuple[ValueType, _DisplayType], ...]: ...
-    def __new__(cls, __name: Optional[str] = None, **kwargs: Any):
+    def __new__(cls, **params: Any) -> Tuple[_ChoiceEntryType, ...]: ...
+    def __new__(cls, __name: Optional[str] = None, **kwargs: Any) -> Union[Type[Choices], Tuple[_ChoiceEntryType, ...]]:
         if cls is not Choices:  # x = Choices(...); x(**params)
             return tuple(v.__choice_entry__ for _, v in cls.__iter_items(**kwargs))
-        return type(cls.__name__ if __name is None else __name, (Choices,), kwargs)
+        return cast(Type[Choices], type(cls.__name__ if __name is None else __name, (Choices,), kwargs))
 
     def __init_subclass__(cls, **kwargs: Any):
         super().__init_subclass__(**kwargs)
@@ -161,9 +181,9 @@ class Choices(metaclass=__ChoicesMetaclass):
     def __value_factory(cls, key: str, value: Hashable, display: _DisplayType, **params: Any) -> ValueType:
         try:
             hash(value)
-            _type = type(
+            value_class = type(
                 f"{cls.__qualname__.replace('.', '_')}_{key}",
-                (type(value), ValueType),
+                (type(value),) if SUPPORT_PROTOCOLS else (type(value), ValueType),
                 {**params, "display": display, "__choice_entry__": (value, display)},
             )
         except TypeError:
@@ -172,8 +192,8 @@ class Choices(metaclass=__ChoicesMetaclass):
                 f"for choices class value {cls.__qualname__ + '.' + key!r}"
             ) from None
 
-        globals()[_type.__name__] = _type  # pickle support
-        return _type(value)
+        globals()[value_class.__name__] = value_class  # pickle support
+        return value_class(value)
 
     @classmethod
     def __iter_items(cls, **params: Any) -> Iterator[Tuple[str, ValueType]]:
@@ -232,14 +252,20 @@ class Choices(metaclass=__ChoicesMetaclass):
         return tuple(v.display for _, v in cls.__iter_items(**params))
 
     @classmethod
-    def extract(cls, __key: str, *keys: str, name: str = "Subset") -> Type["Choices"]:
+    def extract(cls, __key: str, *keys: str, name: str = "Subset") -> Type[Choices]:
         """Extract values from choices class and return a new subset."""
-        return type(f"{cls.__name__}.{name}", (cls,), {k: cls.__values[k] for k in (__key, *keys)})
+        return cast(
+            Type[Choices],
+            type(f"{cls.__name__}.{name}", (cls,), {k: cls.__values[k] for k in (__key, *keys)}),
+        )
 
     @classmethod
-    def exclude(cls, __key: str, *keys: str, name: str = "Subset") -> Type["Choices"]:
+    def exclude(cls, __key: str, *keys: str, name: str = "Subset") -> Type[Choices]:
         """Exclude values from choices class and return remaining values as a new subset."""
-        return type(f"{cls.__name__}.{name}", (cls,), {k: v for v, k in cls.__keys.items() if k not in {__key, *keys}})
+        return cast(
+            Type[Choices],
+            type(f"{cls.__name__}.{name}", (cls,), {k: v for v, k in cls.__keys.items() if k not in {__key, *keys}}),
+        )
 
     Value = _ChoicesValue
     Subset = _ChoicesSubset
