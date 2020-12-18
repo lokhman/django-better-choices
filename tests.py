@@ -244,6 +244,24 @@ class TestCase(unittest.TestCase):
         self.assertEqual(("DISPLAY 3", "DISPLAY 5"), TestChoices.SUBSET2.get_upper_displays())
         self.assertEqual(("DISPLAY 1", "DISPLAY 7"), TestChoices.extract("VAL1", "VAL7").get_upper_displays())
 
+    def test_inheritance(self):
+        class TestNextChoices(TestChoices):
+            VAL3 = Choices.Value("Display 3", value="val3")
+            VAL8 = "Display 8"
+
+        class TestFinalChoices(TestNextChoices):
+            VAL9 = "Display 9"
+            SUBSET3 = Choices.Subset("VAL2", "VAL8", "VAL9")
+
+        self.assertEqual("Display 1", TestFinalChoices.VAL1.display)
+        self.assertEqual("val3", TestFinalChoices.VAL3)
+        self.assertEqual("val9", TestFinalChoices.VAL9)
+        self.assertEqual(
+            ("val1", "val2", "val3", "val4", "val5", (1, 2, 3), 7, "val8", "val9"),
+            TestFinalChoices.values(),
+        )
+        self.assertEqual(("DISPLAY 2", "DISPLAY 8", "DISPLAY 9"), TestFinalChoices.SUBSET3.get_upper_displays())
+
     def test_copy(self):
         self.assertEqual("val1", copy.copy(TestChoices.VAL1))
         self.assertEqual("value-3", copy.copy(TestChoices.VAL3))

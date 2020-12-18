@@ -132,13 +132,19 @@ class Choices(metaclass=__ChoicesMetaclass):
             return tuple(v.__choice_entry__ for _, v in cls.__iter_items(**kwargs))
         return cast(Type[Choices], type(cls.__name__ if __name is None else __name, (Choices,), kwargs))
 
-    def __init_subclass__(cls, **kwargs: Any):
+    def __init_subclass__(cls, _subset: bool = False, **kwargs: Any):
         super().__init_subclass__(**kwargs)
 
         cls.__keys = {}
         cls.__values = {}
 
-        for key, value in cls.__dict__.items():
+        __dict__ = {}
+        if not _subset:
+            for base in reversed(cls.__mro__[1:-2]):
+                __dict__.update(base.__dict__)
+        __dict__.update(cls.__dict__)
+
+        for key, value in __dict__.items():
             if key.startswith("_"):
                 continue
 
@@ -256,7 +262,12 @@ class Choices(metaclass=__ChoicesMetaclass):
         """Extract values from choices class and return a new subset."""
         return cast(
             Type[Choices],
-            type(f"{cls.__name__}.{name}", (cls,), {k: cls.__values[k] for k in (__key, *keys)}),
+            type(
+                f"{cls.__name__}.{name}",
+                (cls,),
+                {k: cls.__values[k] for k in (__key, *keys)},
+                _subset=True,
+            ),
         )
 
     @classmethod
@@ -264,7 +275,12 @@ class Choices(metaclass=__ChoicesMetaclass):
         """Exclude values from choices class and return remaining values as a new subset."""
         return cast(
             Type[Choices],
-            type(f"{cls.__name__}.{name}", (cls,), {k: v for v, k in cls.__keys.items() if k not in {__key, *keys}}),
+            type(
+                f"{cls.__name__}.{name}",
+                (cls,),
+                {k: v for v, k in cls.__keys.items() if k not in {__key, *keys}},
+                _subset=True,
+            ),
         )
 
     Value = _ChoicesValue
