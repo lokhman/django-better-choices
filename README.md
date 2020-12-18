@@ -25,22 +25,22 @@ from django_better_choices import Choices
 The choices can be defined with overriding `Choices` class.
 ```python
 class PageStatus(Choices):
-    CREATED = 'Created'
-    PENDING = Choices.Value('Pending', help_text='This set status to pending')
-    ON_HOLD = Choices.Value('On Hold', value='custom_on_hold')
+    CREATED = "Created"
+    PENDING = Choices.Value("Pending", help_text="This set status to pending")
+    ON_HOLD = Choices.Value("On Hold", value="custom_on_hold")
 
-    VALID = Choices.Subset('CREATED', 'ON_HOLD')
-    INVISIBLE = Choices.Subset('PENDING', 'ON_HOLD')
+    VALID = Choices.Subset("CREATED", "ON_HOLD")
+    INVISIBLE = Choices.Subset("PENDING", "ON_HOLD")
 
     class InternalStatus(Choices):
-        REVIEW = _('On Review')
+        REVIEW = _("On Review")
 
     @classmethod
     def get_help_text(cls):
         return tuple(
             value.help_text
             for value in cls.values()
-            if hasattr(value, 'help_text')
+            if hasattr(value, "help_text")
         )
 ```
 > Choices class key can be any *public* identifier (i.e. not starting with underscore `_`).
@@ -49,7 +49,7 @@ class PageStatus(Choices):
 ### Inline definition
 Alternatively, the choices can be defined dynamically by creating a new `Choices` instance.
 ```python
-PageStatus = Choices('PageStatus', SUCCESS='Success', FAIL='Error', VALID=Choices.Subset('SUCCESS'))
+PageStatus = Choices("PageStatus", SUCCESS="Success", FAIL="Error", VALID=Choices.Subset("SUCCESS"))
 ```
 > The first `name` parameter of `Choices` constructor is optional and required only for better representation of the returned instance.
 
@@ -58,7 +58,7 @@ You can access choices values using dot notation and with `getattr()`.
 ```python
 value_created = PageStatus.CREATED
 value_review = PageStatus.InternalStatus.REVIEW
-value_on_hold = getattr(PageStatus, 'ON_HOLD')
+value_on_hold = getattr(PageStatus, "ON_HOLD")
 ```
 
 ### Values and value parameters
@@ -69,38 +69,38 @@ print( PageStatus.ON_HOLD )                # 'custom_on_hold'
 print( PageStatus.PENDING.display )        # 'Pending'
 print( PageStatus.PENDING.help_text )      # 'This set status to pending'
 
-PageStatus.ON_HOLD == 'custom_on_hold'     # True
+PageStatus.ON_HOLD == "custom_on_hold"     # True
 PageStatus.CREATED == PageStatus.CREATED   # True
 
 
 class Rating(Choices):
-    VERY_POOR = Choices.Value('Very poor', value=1)
-    POOR = Choices.Value('Poor', value=2)
-    OKAY = Choices.Value('Okay', value=3, alt='Not great, not terrible')
-    GOOD = Choices.Value('Good', value=4)
-    VERY_GOOD = Choices.Value('Very good', value=5)
+    VERY_POOR = Choices.Value("Very poor", value=1)
+    POOR = Choices.Value("Poor", value=2)
+    OKAY = Choices.Value("Okay", value=3, alt="Not great, not terrible")
+    GOOD = Choices.Value("Good", value=4)
+    VERY_GOOD = Choices.Value("Very good", value=5)
 
 print( Rating.VERY_GOOD )                  # 5
 print( Rating.OKAY.alt )                   # 'Not great, not terrible'
-print( {4: 'Alright'}[Rating.GOOD] )       # 'Alright'
+print( {4: "Alright"}[Rating.GOOD] )       # 'Alright'
 ```
 > Instance of `Choices.Value` class cannot be modified after initialisation. All native non-magic methods can be overridden in `Choices.Value` custom parameters.
 
 ### Search in choices
 Search in choices is performed by value.
 ```python
-'created' in PageStatus                    # True
-'custom_on_hold' in PageStatus             # True
-'on_hold' in PageStatus                    # False
-value = PageStatus['custom_on_hold']       # ValueType('custom_on_hold')
-value = PageStatus.get('on_hold', 123.45)  # 123.45
-key = PageStatus.get_key('created')        # 'CREATED'
+"created" in PageStatus                    # True
+"custom_on_hold" in PageStatus             # True
+"on_hold" in PageStatus                    # False
+value = PageStatus["custom_on_hold"]       # ValueType('custom_on_hold')
+value = PageStatus.get("on_hold", 123.45)  # 123.45
+key = PageStatus.get_key("created")        # 'CREATED'
 ```
 
 ### Search in subsets
 Subsets are used to group several values together (see class definition example) and search by a specific value.
 ```python
-'custom_on_hold' in PageStatus.VALID       # True
+"custom_on_hold" in PageStatus.VALID       # True
 PageStatus.CREATED in PageStatus.VALID     # True
 ```
 > `Choices.Subset` is a subclass of `tuple`, which is compiled to inner choices class after its definition. All internal or custom choices class methods or properties will be available in a subset class (see "Custom methods" section).
@@ -108,15 +108,15 @@ PageStatus.CREATED in PageStatus.VALID     # True
 ### Extract subset
 Subsets of choices can be dynamically extracted with `extract()` method.
 ```python
-PageStatus.extract('CREATED', 'ON_HOLD')   # Choices('PageStatus.Subset', CREATED, ON_HOLD)
-PageStatus.VALID.extract('ON_HOLD')        # Choices('PageStatus.VALID.Subset', ON_HOLD)
+PageStatus.extract("CREATED", "ON_HOLD")   # Choices('PageStatus.Subset', CREATED, ON_HOLD)
+PageStatus.VALID.extract("ON_HOLD")        # Choices('PageStatus.VALID.Subset', ON_HOLD)
 ```
 
 ### Exclude values
 The opposite action to `extract()` is `exclude()`. It is used to exclude values from choices class or a subset and return remaining values as a new subset.
 ```python
-PageStatus.exclude('CREATED', 'ON_HOLD')   # Choices('PageStatus.Subset', PENDING)
-PageStatus.VALID.exclude('ON_HOLD')        # Choices('PageStatus.VALID.Subset', CREATED)
+PageStatus.exclude("CREATED", "ON_HOLD")   # Choices('PageStatus.Subset', PENDING)
+PageStatus.VALID.exclude("ON_HOLD")        # Choices('PageStatus.VALID.Subset', CREATED)
 ```
 
 ### Choices iteration
@@ -142,7 +142,7 @@ for display in PageStatus.displays():
 for display in PageStatus.SUBSET.displays():
     print( display )
 ```
-> Iteration methods `items()`, `keys()`, `values()`, `displays()`, as well as class constructor can accept keyword arguments to filter collections based on custom parameters, e.g. `PageStatus.values(help_text='Some', special=123)`.
+> Iteration methods `items()`, `keys()`, `values()`, `displays()`, as well as class constructor can accept keyword arguments to filter collections based on custom parameters, e.g. `PageStatus.values(help_text="Some", special=123)`.
 
 ### Set operations
 Choices class and subsets support standard set operations: *union* (`|`), *intersection* (`&`), *difference* (`-`), and *symmetric difference* (`^`).
@@ -158,8 +158,22 @@ All custom choices class methods or properties (non-values) will be available in
 ```python
 PageStatus.get_help_text()
 PageStatus.VALID.get_help_text()
-PageStatus.extract('PENDING', 'ON_HOLD').get_help_text()
-PageStatus.VALID.extract('ON_HOLD').get_help_text()
+PageStatus.extract("PENDING", "ON_HOLD").get_help_text()
+PageStatus.VALID.extract("ON_HOLD").get_help_text()
+```
+
+### Inheritance
+Choices fully support class inheritance. All child choices classes have access to parent, grandparent, etc. values and custom methods.
+```python
+class NewPageStatus(PageStatus):
+    ARCHIVED = "Archived"
+    ON_HOLD = Choices.Value("On Hold", value="on-hold")  # override parent value
+
+    INACTIVE = Choices.Subset("ON_HOLD", "ARCHIVED")
+
+print( NewPageStatus.CREATED )              # 'created'
+print( NewPageStatus.ARCHIVED )             # 'archived'
+print( NewPageStatus.ON_HOLD )              # 'on-hold'
 ```
 
 ### Django model fields
