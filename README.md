@@ -1,4 +1,4 @@
-# Django Better Choices
+# Django Better Choices v1.x
 
 [![PyPI](https://img.shields.io/pypi/v/django-better-choices)](https://pypi.org/project/django-better-choices)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-better-choices)

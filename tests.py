@@ -5,54 +5,55 @@ import unittest
 
 from collections.abc import Iterable
 
-from django_better_choices import Choices, ValueType
+from django_better_choices import Choices, Value, choices
 
 
-class TestChoices(Choices):
+@choices
+class TestChoices:
     # values
     VAL1 = "Display 1"
-    VAL2 = Choices.Value("Display 2")
-    VAL3 = Choices.Value("Display 3", value="value-3")
-    VAL4 = Choices.Value("Display 4", param1="Param 4.1", strip="Custom")
-    VAL5 = Choices.Value("Display 5", param1="Param 5.1", param2="Param 5.2", strip="Custom")
-    VAL6 = Choices.Value("Display 6", value=(1, 2, 3), param3="Param 6.1")
-    VAL7 = Choices.Value("Display 7", value=7)
+    VAL2 = choices.value("Display 2")
+    VAL3 = choices.value("Display 3", value="value-3")
+    VAL4 = choices.value("Display 4", param1="Param 4.1", strip="Custom")
+    VAL5 = choices.value("Display 5", param1="Param 5.1", param2="Param 5.2", strip="Custom")
+    VAL6 = choices.value("Display 6", value=(1, 2, 3), param3="Param 6.1")
+    VAL7 = choices.value("Display 7", value=7)
 
     # subsets
-    SUBSET1 = Choices.Subset("VAL1", "VAL2", "VAL3")
-    SUBSET2 = Choices.Subset("VAL3", "VAL5")
+    SUBSET1 = choices.subset("VAL1", "VAL2", "VAL3")
+    SUBSET2 = choices.subset("VAL3", "VAL5")
 
     # arbitrary data
     DATA1 = 123.45
     data2 = [1, 2, 3]
 
     # nested choices
-    class Nested(Choices):
+    @choices
+    class Nested:
         VAL10 = "Display 10"
         VAL20 = "Display 20"
 
-    @classmethod
-    def get_upper_displays(cls):
-        return tuple(map(str.upper, cls.displays()))
+    def get_upper_displays(self):
+        return tuple(map(str.upper, self.displays()))
 
 
 class TestCase(unittest.TestCase):
     def test_init(self):
-        local = Choices(
+        local = choices.new(
             VAL1="Display 1",
-            VAL2=Choices.Value("Display 2"),
-            SUBSET=Choices.Subset("VAL1", "VAL2", "VAL1"),
+            VAL2=choices.value("Display 2"),
+            SUBSET=choices.subset("VAL1", "VAL2", "VAL1"),
         )
 
-        self.assertEqual("TestChoices", TestChoices.__name__)
-        self.assertEqual("CONST_NAME", Choices("CONST_NAME").__name__)
-        self.assertEqual("TestChoices.SUBSET1", TestChoices.SUBSET1.__name__)
-        self.assertEqual("Choices", local.__name__)
+        self.assertEqual("TestChoices", TestChoices.__class__.__name__)
+        self.assertEqual("CONST_NAME", choices.new("CONST_NAME").__class__.__name__)
+        self.assertEqual("TestChoices.SUBSET1", TestChoices.SUBSET1.__class__.__name__)
+        self.assertEqual("Choices", local.__class__.__name__)
 
         self.assertEqual("Choices(VAL1, VAL2)", str(local))
-        self.assertEqual("Choices('Choices', VAL1='Display 1', VAL2='Display 2')", repr(local))
+        self.assertEqual("Choices('Choices', VAL1='val1', VAL2='val2')", repr(local))
         self.assertEqual("Choices.SUBSET(VAL1, VAL2)", str(local.SUBSET))
-        self.assertEqual("Choices('TEST')", repr(Choices("TEST")))
+        self.assertEqual("Choices('TEST')", repr(choices.new("TEST")))
 
         self.assertEqual("val1", local.VAL1)
         self.assertEqual("val2", str(local.VAL2))
@@ -64,27 +65,32 @@ class TestCase(unittest.TestCase):
         self.assertEqual([1, 2, 3], TestChoices.data2)
 
         with self.assertRaises(ValueError) as ctx:  # duplicated value
-            Choices(VAL1="Display 1", VAL2=Choices.Value("Display 2", value="val1"))
-        self.assertEqual("choices class 'Choices' has a duplicated value 'val1' for key 'VAL2'", str(ctx.exception))
+            choices.new(VAL1="Display 1", VAL2=choices.value("Display 2", value="val1"))
 
-        with self.assertRaises(KeyError) as ctx:  # invalid subset key
-            class _(Choices):
+        self.assertEqual(
+            "choices class 'Choices' has a duplicated value 'val1' for attribute 'VAL2'",
+            str(ctx.exception)
+        )
+
+        with self.assertRaises(AttributeError) as ctx:  # invalid subset key
+            @choices
+            class _:
                 VAL1 = "Display 1"
-                SUBSET1 = Choices.Subset(VAL1)
+                SUBSET1 = choices.subset(VAL1)
 
-        self.assertEqual("'Display 1'", str(ctx.exception))
+        self.assertEqual("'_' object has no attribute 'Display 1'", str(ctx.exception))
 
         with self.assertRaises(TypeError) as ctx:  # invalid value type
-            Choices(VAL=Choices.Value("Display", value=True))
+            choices.new(VAL=choices.value("Display", value=True))
         self.assertEqual("type 'bool' is not acceptable for choices class value 'Choices.VAL'", str(ctx.exception))
 
     def test_accessors(self):
-        for _type in (ValueType, str):
-            self.assertIsInstance(TestChoices.VAL1, _type)
-            self.assertIsInstance(TestChoices.Nested.VAL10, _type)
+        for type_ in (Value, str):
+            self.assertIsInstance(TestChoices.VAL1, type_)
+            self.assertIsInstance(TestChoices.Nested.VAL10, type_)
 
-        for _type in (ValueType, tuple):
-            self.assertIsInstance(TestChoices.VAL6, _type)
+        for type_ in (Value, tuple):
+            self.assertIsInstance(TestChoices.VAL6, type_)
 
         self.assertEqual("Display 1", TestChoices.VAL1.display)
         self.assertEqual("val2", TestChoices.VAL2)
@@ -101,7 +107,7 @@ class TestCase(unittest.TestCase):
 
         with self.assertRaises(AttributeError) as ctx:  # invalid key
             _ = TestChoices.VAL0
-        self.assertEqual("type object 'TestChoices' has no attribute 'VAL0'", str(ctx.exception))
+        self.assertEqual("'TestChoices' object has no attribute 'VAL0'", str(ctx.exception))
 
         with self.assertRaises(AttributeError) as ctx:  # invalid value parameter
             _ = TestChoices.VAL5.param3
@@ -115,28 +121,26 @@ class TestCase(unittest.TestCase):
         self.assertNotIn((1, 2, 3, 4), TestChoices)
         self.assertIn(TestChoices.VAL1, TestChoices)
 
-        self.assertIsInstance(TestChoices.get("val2"), ValueType)
+        self.assertIsInstance(TestChoices.get("val2"), Value)
         self.assertEqual("val2", TestChoices.get(TestChoices.VAL2))
         self.assertEqual("Display 2", TestChoices.get("val2").display)
-        self.assertEqual("VAL2", TestChoices.get_key("val2"))
         self.assertIs(TestChoices.get("val2"), TestChoices["val2"])
 
         self.assertIsNone(TestChoices.get("val0"))
         self.assertEqual(123.45, TestChoices.get("val0", 123.45))
-        self.assertIsNone(TestChoices.get_key("val0"))
-        self.assertEqual(123.45, TestChoices.get_key("val0", 123.45))
 
-        with self.assertRaises(ValueError) as ctx:
+        with self.assertRaises(KeyError) as ctx:
             _ = TestChoices["val0"]
-        self.assertEqual("value 'val0' is not found in choices class 'TestChoices'", str(ctx.exception))
+        self.assertEqual("'val0'", str(ctx.exception))
 
         self.assertIn("val2", TestChoices.SUBSET1)
         self.assertNotIn("val4", TestChoices.SUBSET1)
         self.assertIn(TestChoices.VAL1, TestChoices.SUBSET1)
 
     def test_iteration(self):
-        self.assertEqual(("VAL1", "VAL2", "VAL3", "VAL4", "VAL5", "VAL6", "VAL7"), TestChoices.keys())
+        self.assertEqual(("val1", "val2", "value-3", "val4", "val5", (1, 2, 3), 7), TestChoices.keys())
         self.assertEqual(("val1", "val2", "value-3", "val4", "val5", (1, 2, 3), 7), TestChoices.values())
+        self.assertIsNot(TestChoices.keys(), TestChoices.values())
         self.assertEqual(tuple(zip(TestChoices.keys(), TestChoices.values())), TestChoices.items())
 
         self.assertEqual(
@@ -155,10 +159,8 @@ class TestCase(unittest.TestCase):
                 ((1, 2, 3), "Display 6"),
                 (7, "Display 7"),
             ),
-            tuple(TestChoices),
+            TestChoices.choices(),
         )
-        self.assertTrue(callable(TestChoices))
-        self.assertEqual(tuple(TestChoices), TestChoices())
 
         self.assertEqual(
             (
@@ -166,12 +168,10 @@ class TestCase(unittest.TestCase):
                 ("val2", "Display 2"),
                 ("value-3", "Display 3"),
             ),
-            tuple(TestChoices.SUBSET1),
+            TestChoices.SUBSET1.choices(),
         )
-        self.assertTrue(callable(TestChoices.SUBSET1))
-        self.assertEqual(tuple(TestChoices.SUBSET1), TestChoices.SUBSET1())
 
-        self.assertEqual(("VAL1", "VAL2", "VAL3"), TestChoices.SUBSET1.keys())
+        self.assertEqual(("val1", "val2", "value-3"), TestChoices.SUBSET1.keys())
         self.assertEqual(("val1", "val2", "value-3"), TestChoices.SUBSET1.values())
         self.assertEqual(
             tuple(zip(TestChoices.SUBSET1.keys(), TestChoices.SUBSET1.values())),
@@ -179,61 +179,43 @@ class TestCase(unittest.TestCase):
         )
         self.assertEqual(("Display 1", "Display 2", "Display 3"), TestChoices.SUBSET1.displays())
 
-        self.assertEqual(
-            (
-                ("val4", "Display 4"),
-                ("val5", "Display 5"),
-            ),
-            TestChoices(strip="Custom"),
-        )
-        self.assertEqual(("VAL4", "VAL5"), TestChoices.keys(strip="Custom"))
-        self.assertEqual(("val4", "val5"), TestChoices.values(strip="Custom"))
-        self.assertEqual(
-            tuple(zip(TestChoices.keys(strip="Custom"), TestChoices.values(strip="Custom"))),
-            TestChoices.items(strip="Custom"),
-        )
-        self.assertEqual(("Display 4", "Display 5"), TestChoices.displays(strip="Custom"))
-
-        self.assertEqual((), TestChoices.values(strip="Custom", param0="Unknown"))
-        self.assertEqual(("val5",), TestChoices.values(strip="Custom", param2="Param 5.2"))
-
     def test_extract(self):
         choices_extract = TestChoices.extract("VAL2", "VAL5")
-        self.assertEqual("TestChoices.Subset", choices_extract.__name__)
+        self.assertEqual("TestChoices.Subset", choices_extract.__class__.__name__)
         self.assertEqual(("val2", "val5"), choices_extract.values())
 
         subset_extract = TestChoices.SUBSET1.extract("VAL1", "VAL3", name="EXTRACTED")
-        self.assertEqual("TestChoices.SUBSET1.EXTRACTED", subset_extract.__name__)
+        self.assertEqual("TestChoices.SUBSET1.EXTRACTED", subset_extract.__class__.__name__)
         self.assertEqual(("val1", "value-3"), subset_extract.values())
 
     def test_exclude(self):
         choices_exclude = TestChoices.exclude("VAL2", "VAL5")
-        self.assertEqual("TestChoices.Subset", choices_exclude.__name__)
+        self.assertEqual("TestChoices.Subset", choices_exclude.__class__.__name__)
         self.assertEqual(("val1", "value-3", "val4", (1, 2, 3), 7), choices_exclude.values())
 
         subset_exclude = TestChoices.SUBSET1.exclude("VAL1", "VAL3", name="EXCLUDED")
-        self.assertEqual("TestChoices.SUBSET1.EXCLUDED", subset_exclude.__name__)
+        self.assertEqual("TestChoices.SUBSET1.EXCLUDED", subset_exclude.__class__.__name__)
         self.assertEqual(("val2",), subset_exclude.values())
 
     def test_operations(self):
         union = TestChoices.SUBSET1 | TestChoices.SUBSET2
-        self.assertEqual("TestChoices.SUBSET1|TestChoices.SUBSET2", union.__name__)
-        self.assertEqual(("VAL1", "VAL2", "VAL3", "VAL5"), union.keys())
+        self.assertEqual("<TestChoices.SUBSET1|TestChoices.SUBSET2>", union.__class__.__name__)
+        self.assertEqual(("val1", "val2", "value-3", "val5"), union.keys())
         self.assertEqual((TestChoices.VAL1, TestChoices.VAL2, TestChoices.VAL3, TestChoices.VAL5), union.values())
 
         intersection = TestChoices.SUBSET1 & TestChoices.SUBSET2
-        self.assertEqual("TestChoices.SUBSET1&TestChoices.SUBSET2", intersection.__name__)
-        self.assertEqual(("VAL3",), intersection.keys())
+        self.assertEqual("<TestChoices.SUBSET1&TestChoices.SUBSET2>", intersection.__class__.__name__)
+        self.assertEqual(("value-3",), intersection.keys())
         self.assertEqual((TestChoices.VAL3,), intersection.values())
 
         difference = TestChoices.SUBSET1 - TestChoices.SUBSET2
-        self.assertEqual("TestChoices.SUBSET1-TestChoices.SUBSET2", difference.__name__)
-        self.assertEqual(("VAL1", "VAL2"), difference.keys())
+        self.assertEqual("<TestChoices.SUBSET1-TestChoices.SUBSET2>", difference.__class__.__name__)
+        self.assertEqual(("val1", "val2"), difference.keys())
         self.assertEqual((TestChoices.VAL1, TestChoices.VAL2), difference.values())
 
         symmetric_difference = TestChoices.SUBSET1 ^ TestChoices.SUBSET2
-        self.assertEqual("TestChoices.SUBSET1^TestChoices.SUBSET2", symmetric_difference.__name__)
-        self.assertEqual(("VAL1", "VAL2", "VAL5"), symmetric_difference.keys())
+        self.assertEqual("<TestChoices.SUBSET1^TestChoices.SUBSET2>", symmetric_difference.__class__.__name__)
+        self.assertEqual(("val1", "val2", "val5"), symmetric_difference.keys())
         self.assertEqual((TestChoices.VAL1, TestChoices.VAL2, TestChoices.VAL5), symmetric_difference.values())
 
     def test_custom_methods(self):
@@ -245,13 +227,15 @@ class TestCase(unittest.TestCase):
         self.assertEqual(("DISPLAY 1", "DISPLAY 7"), TestChoices.extract("VAL1", "VAL7").get_upper_displays())
 
     def test_inheritance(self):
+        @choices
         class TestNextChoices(TestChoices):
-            VAL3 = Choices.Value("Display 3", value="val3")
+            VAL3 = choices.value("Display 3", value="val3")
             VAL8 = "Display 8"
 
+        @choices
         class TestFinalChoices(TestNextChoices):
             VAL9 = "Display 9"
-            SUBSET3 = Choices.Subset("VAL2", "VAL8", "VAL9")
+            SUBSET3 = choices.subset("VAL2", "VAL8", "VAL9")
 
         self.assertEqual("Display 1", TestFinalChoices.VAL1.display)
         self.assertEqual("val3", TestFinalChoices.VAL3)
@@ -274,13 +258,15 @@ class TestCase(unittest.TestCase):
 
     def test_pickle(self):
         def factory1():
-            class Local(Choices):
+            @choices
+            class Local:
                 VAL = "Display F1"
             return Local
 
         def factory2():
-            class Local(Choices):
-                VAL = Choices.Value("Display F2", param=123)
+            @choices
+            class Local:
+                VAL = choices.value("Display F2", param=123)
             return Local
 
         choices1 = factory1()
@@ -303,7 +289,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(
             '[["val1", "Display 1"], ["val2", "Display 2"], ["value-3", "Display 3"], '
             '["val4", "Display 4"], ["val5", "Display 5"], [[1, 2, 3], "Display 6"], [7, "Display 7"]]',
-            json.dumps([*TestChoices]),
+            json.dumps([*TestChoices.choices()]),
         )
 
 
