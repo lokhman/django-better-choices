@@ -1,6 +1,6 @@
 import setuptools
 
-attrs = {"version": "1.17"}
+attrs = {"version": "1.18"}
 
 with open("README.md") as f:
     attrs["long_description"] = f.read()
@@ -19,6 +19,10 @@ setuptools.setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Programming Language :: Python :: Implementation :: CPython",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
