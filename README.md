@@ -2,7 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/django-better-choices)](https://pypi.org/project/django-better-choices)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-better-choices)
-[![Build Status](https://img.shields.io/github/workflow/status/lokhman/django-better-choices/CI/master)](https://github.com/lokhman/django-better-choices/actions?query=workflow%3ACI)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/lokhman/django-better-choices/ci.yml?branch=1.x)](https://github.com/lokhman/django-better-choices/actions?query=workflow%3ACI)
 [![codecov](https://codecov.io/gh/lokhman/django-better-choices/branch/master/graph/badge.svg)](https://codecov.io/gh/lokhman/django-better-choices)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
