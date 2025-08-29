@@ -16,7 +16,6 @@ setuptools.setup(
     url="https://github.com/lokhman/django-better-choices",
     download_url=f"https://github.com/lokhman/django-better-choices/tarball/{attrs['version']}",
     classifiers=[
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",

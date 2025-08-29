@@ -9,7 +9,7 @@
 Better [choices](https://docs.djangoproject.com/en/3.0/ref/models/fields/#choices) library for Django web framework.
 
 ## Requirements
-This library was written for Python 3.7+ and will not work in any earlier versions.
+This library was written for Python 3.8+ and will not work in any earlier versions.
 
 ## Install
 
