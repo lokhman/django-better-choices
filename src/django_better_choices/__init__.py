@@ -6,17 +6,17 @@ import typing
 
 try:
     from typing import Self as _Self
-except ImportError:
-    from typing_extensions import Self as _Self
+except ImportError:  # pragma: no cover
+    from typing_extensions import Self as _Self  # pragma: no cover
 
 try:
     from django.utils.functional import Promise as _Promise
-except ImportError:
+except ImportError:  # pragma: no cover
 
-    class _Promise: ...
+    class _Promise: ...  # pragma: no cover
 
 
-__all__ = ["Choices"]
+__all__ = ["Choices"]  # pragma: no cover
 
 _undefined = object()
 
