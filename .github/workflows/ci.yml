@@ -5,24 +5,41 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+          enable-cache: "auto"
+
+      - name: Run ruff lint
+        run: uvx ruff check .
+
+      - name: Run ruff format check
+        run: uvx ruff format --check .
+
   test:
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-latest
-        python-version:
-          - 3.7
-          - 3.8
-          - 3.9
-    runs-on: ${{ matrix.os }}
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python-version }}
-      - run: pip install codecov
-      - run: coverage run tests.py
-      - run: codecov
+          enable-cache: "auto"
+
+      - name: Install project
+        run: uv sync --locked --all-extras --dev
+
+      - name: Run tests with coverage
+        run: uv run pytest tests --cov
+

@@ -1,0 +1,75 @@
+[project]
+name = "django-better-choices"
+version = "3.0"
+description = "Better choices library for Django web framework"
+readme = "README.md"
+authors = [
+    { name = "Alexander Lokhman", email = "alex.lokhman@gmail.com" }
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+license = "MIT"
+requires-python = ">=3.9"
+dependencies = [
+    "typing-extensions>=4.15.0 ; python_full_version < '3.11'",
+]
+
+[project.urls]
+source = "https://github.com/lokhman/django-better-choices"
+
+[build-system]
+requires = ["uv_build>=0.8.20,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.13.1",
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "ANN401",
+    "COM812",
+    "D105",
+    "D203",
+    "D212",
+    "EM1",
+    "TRY003",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101",
+    "PLR2004",
+    "PLR0913",
+    "ARG001",
+    "D",
+    "ANN",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["django_better_choices"]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+skip_covered = true
