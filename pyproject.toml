@@ -65,11 +65,19 @@ ignore = [
     "ANN",
 ]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [tool.coverage.run]
 branch = true
 source = ["django_better_choices"]
+omit = ["tests/*"]
+
+[tool.coverage.xml]
+output = "coverage.xml"
 
 [tool.coverage.report]
 fail_under = 100
 show_missing = true
 skip_covered = true
+precision = 1

@@ -41,5 +41,14 @@ jobs:
         run: uv sync --locked --all-extras --dev
 
       - name: Run tests with coverage
-        run: uv run pytest tests --cov
+        env:
+          COVERAGE_FILE: .coverage.${{ matrix.python-version }}
+        run: uv run pytest --cov --cov-report=xml:coverage.${{ matrix.python-version }}.xml
 
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.${{ matrix.python-version }}.xml
+          flags: py${{ matrix.python-version }}
+          name: py${{ matrix.python-version }}
+          fail_ci_if_error: true

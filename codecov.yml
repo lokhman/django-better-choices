@@ -1,0 +1,17 @@
+coverage:
+  status:
+    project:
+      default:
+        target: 100%
+        threshold: 0%
+        base: auto
+    patch:
+      default:
+        target: 100%
+        threshold: 0%
+        base: auto
+
+comment:
+  layout: "reach, diff, files"
+  behavior: default
+  require_changes: false
