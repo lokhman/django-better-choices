@@ -2,23 +2,25 @@
 
 import collections.abc
 import enum
+import sys
+import types
 import typing
 
-try:
-    from typing import Self as _Self
-except ImportError:  # pragma: no cover
+if sys.version_info >= (3, 11):
+    from typing import Self as _Self  # pragma: no cover
+else:  # pragma: no cover
     from typing_extensions import Self as _Self  # pragma: no cover
 
 try:
-    from django.utils.functional import Promise as _Promise
+    from django.utils.functional import Promise as _Promise  # type: ignore[import-not-found]
 except ImportError:  # pragma: no cover
 
-    class _Promise: ...  # pragma: no cover
+    class _Promise: ...  # type: ignore[no-redef]  # pragma: no cover
 
 
 __all__ = ["Choices"]  # pragma: no cover
 
-_undefined = object()
+_auto = object()
 
 _Display = typing.Union[str, _Promise]
 
@@ -31,7 +33,7 @@ class _ValueAttribute:
         display: _Display,
         /,
         *,
-        value: collections.abc.Hashable = _undefined,
+        value: collections.abc.Hashable = _auto,
         **params: typing.Any,
     ) -> None:
         self.value = value
@@ -74,32 +76,42 @@ class _ChoicesDict(enum._EnumDict):  # noqa: SLF001
 
     @property
     def member_names(self) -> typing.Iterable[str]:
-        return self._member_names
+        return self._member_names  # type: ignore[attr-defined]
 
 
 class _ChoicesMeta(enum.EnumMeta):
     @classmethod
-    def __prepare__(metacls, class_name: str, bases: tuple[type, ...], **kwargs: typing.Any) -> _ChoicesDict:  # noqa: N804
-        class_dict = super().__prepare__(class_name, bases)
+    def __prepare__(  # type: ignore[override]
+        metacls,  # noqa: N804
+        class_name: str,
+        bases: tuple[type, ...],
+        **kwargs: typing.Any,
+    ) -> _ChoicesDict:
+        class_dict = super().__prepare__(class_name, bases, **kwargs)
         class_dict.__class__ = _ChoicesDict
         return typing.cast("_ChoicesDict", class_dict)
 
     def __new__(
-        metacls: type[_Self],
+        metacls,
         class_name: str,
         bases: tuple[type, ...],
         class_dict: _ChoicesDict,
         **kwargs: typing.Any,
-    ) -> _Self:
+    ) -> "_ChoicesMeta":
         value_factory = class_dict.pop("_choices_value_factory_", metacls.default_value_factory)
+
         for choice_name in class_dict.member_names:
             choice = class_dict[choice_name]
             if isinstance(choice, _ValueAttribute):
-                if choice.value is _undefined:
+                if choice.value is _auto:
                     choice.value = value_factory(choice_name, display=choice.display)
             elif isinstance(choice, _Choice):
                 choice_params = {name: getattr(choice, name) for name in choice.__choices_param_names__}
-                choice = _ValueAttribute(choice.display, value=choice.value, **choice_params)
+                choice = _ValueAttribute(
+                    choice.display,
+                    value=choice.value,  # type: ignore[attr-defined]
+                    **choice_params,
+                )
                 dict.__setitem__(class_dict, choice_name, choice)
             elif isinstance(choice, (str, _Promise)):
                 choice = _ValueAttribute(choice, value=value_factory(choice_name, display=choice))
@@ -111,11 +123,13 @@ class _ChoicesMeta(enum.EnumMeta):
 
         for attr, value in class_dict.items():
             if isinstance(value, _SubsetAttribute):
-                choice = Choices(f"{class_name}.{attr}", {name: class_dict[name] for name in value.names})
+                names = {name: class_dict[name] for name in value.names}
+                choice = _create_subset(f"{class_name}.{attr}", class_dict, names)
                 dict.__setitem__(class_dict, attr, choice)
 
         cls = super().__new__(metacls, class_name, bases, class_dict, **kwargs)
-        cls._value_repr_ = None  # Python 3.11+
+        if sys.version_info >= (3, 11):
+            cls._value_repr_ = None  # pragma: no cover
         return cls
 
     def __repr__(cls) -> str:
@@ -160,19 +174,40 @@ class Choices(_AttributeMixin, _Choice, enum.Enum, metaclass=_ChoicesMeta):
     @classmethod
     def extract(cls, choice_name: str, /, *choice_names: str, class_name: str = "") -> _Self:
         """Extract specified choices to a new subset."""
-        choice_names = [choice_name, *choice_names]
+        choice_names = [choice_name, *choice_names]  # type: ignore[assignment]
         if not class_name:
             class_name = f"{cls.__name__}.Subset"
 
         names = {name: getattr(cls, name) for name in choice_names}
-        return Choices(class_name, names)
+        return _create_subset(class_name, cls.__dict__, names)
 
     @classmethod
     def exclude(cls, choice_name: str, /, *choice_names: str, class_name: str = "") -> _Self:
         """Exclude specified choices and return a new subset."""
-        choice_names = {choice_name, *choice_names}
+        choice_names = {choice_name, *choice_names}  # type: ignore[assignment]
         if not class_name:
             class_name = f"{cls.__name__}.Subset"
 
         names = {name: getattr(cls, name) for name in cls._member_names_ if name not in choice_names}
-        return Choices(class_name, names)
+        return _create_subset(class_name, cls.__dict__, names)
+
+
+def _get_public_methods(class_dict: typing.Mapping[str, typing.Any]) -> dict[str, typing.Any]:
+    return {
+        name: obj
+        for name, obj in class_dict.items()
+        if not name.startswith("_") and isinstance(obj, (types.FunctionType, staticmethod, classmethod))
+    }
+
+
+def _create_subset(
+    class_name: str,
+    class_dict: typing.Mapping[str, typing.Any],
+    names: dict[str, typing.Any],
+) -> typing.Any:
+    choices_class = types.new_class(
+        class_name,
+        (Choices,),
+        exec_body=lambda ns: ns.update(_get_public_methods(class_dict)),
+    )
+    return choices_class(class_name, names)

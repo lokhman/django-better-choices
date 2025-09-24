@@ -17,6 +17,13 @@ class TestChoices(Choices):
     SUBSET1 = Choices.Subset("VAL1", "VAL2", "VAL3")
     SUBSET2 = Choices.Subset("VAL3", "VAL5")
 
+    @classmethod
+    def displays(cls):
+        return [choice.display for choice in cls]
+
+    def display_upper(self):
+        return self.display.upper()
+
 
 @pytest.mark.parametrize(
     ("name", "value", "display", "kwargs"),
@@ -109,6 +116,34 @@ def test_extraction():
     excluded3 = excluded1.exclude("VAL1", "VAL2")
     assert list(excluded3) == list(extracted3)
     assert repr(excluded3) == "<choices 'ExcludedSubset.Subset'>"
+
+
+def test_extras():
+    assert TestChoices.displays() == [
+        "Display 1",
+        "Display 2",
+        "Display 3",
+        "Display 4",
+        "Display 5",
+        "Display 6",
+        "Display 7",
+    ]
+    assert TestChoices.SUBSET1.displays() == [
+        "Display 1",
+        "Display 2",
+        "Display 3",
+    ]
+    assert TestChoices.extract("VAL1").displays() == [
+        "Display 1",
+    ]
+    assert TestChoices.exclude("VAL1", "VAL2", "VAL3", "VAL4", "VAL5", "VAL6").displays() == [
+        "Display 7",
+    ]
+
+    assert TestChoices.VAL1.display_upper() == "DISPLAY 1"
+    assert TestChoices.SUBSET1.VAL2.display_upper() == "DISPLAY 2"
+    assert TestChoices.extract("VAL3").VAL3.display_upper() == "DISPLAY 3"
+    assert TestChoices.exclude("VAL3").VAL4.display_upper() == "DISPLAY 4"
 
 
 def test_errors():

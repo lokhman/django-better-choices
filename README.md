@@ -47,12 +47,12 @@ class Status(Choices):
     PUBLIC = Choices.Subset("OPEN", "CLOSED")
 
 # Use like enum + str
-Status.OPEN.value        # "open"
-Status.OPEN.display      # "Open"
-Status.PENDING.level     # 2
-str(Status.OPEN)         # "open"
-Status("open") is Status.OPEN   # True
-"open" in Status                # True
+Status.OPEN.value              # "open"
+Status.OPEN.display            # "Open"
+Status.PENDING.level           # 2
+str(Status.OPEN)               # "open"
+Status("open") is Status.OPEN  # True
+"open" in Status               # True
 
 # For Django model fields:
 # choices=Status.choices()  -> [("draft", "Draft"), ("open", "Open"), ...]
@@ -80,7 +80,7 @@ Example.FOO.display  # "Foo"
 ```
 
 #### 2) Choices.Value(display, *, value=_auto, **params)
-- `display`: what users see (may be lazy `_('Text')`).
+- `display`: what users see (may be lazy `_("Text")`).
 - `value`: hashable value (string/bool/int). By default, auto-generated from the **member name**.
 - `params`: any extra attributes you want to access later.
 
@@ -100,6 +100,7 @@ Override `_choices_value_factory_` to control auto values.
 ```python
 class Example(Choices):
     _choices_value_factory_ = staticmethod(lambda name, **_: name.upper())
+
     ALPHA = "Alpha"
 
 Example.ALPHA.value  # "ALPHA"
@@ -164,6 +165,7 @@ class TicketForm(forms.ModelForm):
 #### i18n (optional)
 ```python
 from django.utils.translation import gettext_lazy as _
+
 class Color(Choices):
     RED = _("Red")
     GREEN = Choices.Value(_("Green"), css="green")
@@ -189,4 +191,4 @@ uv run pytest --cov
 - Please run `ruff check . --fix` and keep tests green with 100% coverage.
 
 ## License
-MIT (see `LICENSE`).
+Library is available under the MIT license. The included LICENSE file describes this in detail.
