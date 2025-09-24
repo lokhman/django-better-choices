@@ -73,9 +73,6 @@ branch = true
 source = ["django_better_choices"]
 omit = ["tests/*"]
 
-[tool.coverage.xml]
-output = "coverage.xml"
-
 [tool.coverage.report]
 fail_under = 100
 show_missing = true
