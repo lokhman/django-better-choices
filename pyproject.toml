@@ -27,7 +27,7 @@ dependencies = [
 ]
 
 [project.urls]
-source = "https://github.com/lokhman/django-better-choices"
+Source = "https://github.com/lokhman/django-better-choices"
 
 [build-system]
 requires = ["uv_build>=0.8.20,<0.9.0"]
