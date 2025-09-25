@@ -129,7 +129,7 @@ toml = [
 
 [[package]]
 name = "django-better-choices"
-version = "3.0"
+version = "3.1"
 source = { editable = "." }
 dependencies = [
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
