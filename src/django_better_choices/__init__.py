@@ -22,7 +22,8 @@ __all__ = ["Choices"]  # pragma: no cover
 
 _auto = object()
 
-_Display = typing.Union[str, _Promise]
+_AnyPromise = typing.TypeVar("_AnyPromise", bound=_Promise)
+_Display = typing.Union[str, _AnyPromise]
 
 
 class _ValueAttribute:
@@ -44,8 +45,11 @@ class _ValueAttribute:
 class _SubsetAttribute:
     __slots__ = ("names",)
 
-    def __init__(self, choice_name: str, /, *choice_names: str) -> None:
-        self.names = tuple(dict.fromkeys([choice_name, *choice_names]))
+    def __init__(self, *choice_names: str) -> None:
+        self.names = tuple(dict.fromkeys(choice_names))
+
+    def __iter__(self) -> typing.Iterator[str]:
+        return iter(self.names)
 
 
 class _AttributeMixin:
@@ -172,23 +176,23 @@ class Choices(_AttributeMixin, _Choice, enum.Enum, metaclass=_ChoicesMeta):
         return [(choice._value_, choice.display) for choice in cls]
 
     @classmethod
-    def extract(cls, choice_name: str, /, *choice_names: str, class_name: str = "") -> _Self:
+    def extract(cls, *choice_names: typing.Union[str, _Self], class_name: str = "") -> _Self:
         """Extract specified choices to a new subset."""
-        choice_names = [choice_name, *choice_names]  # type: ignore[assignment]
         if not class_name:
             class_name = f"{cls.__name__}.Subset"
 
-        names = {name: getattr(cls, name) for name in choice_names}
+        extracted_names = dict.fromkeys(_flatten_choice_names(choice_names))
+        names = {name: getattr(cls, name) for name in extracted_names}
         return _create_subset(class_name, cls.__dict__, names)
 
     @classmethod
-    def exclude(cls, choice_name: str, /, *choice_names: str, class_name: str = "") -> _Self:
+    def exclude(cls, *choice_names: typing.Union[str, _Self], class_name: str = "") -> _Self:
         """Exclude specified choices and return a new subset."""
-        choice_names = {choice_name, *choice_names}  # type: ignore[assignment]
         if not class_name:
             class_name = f"{cls.__name__}.Subset"
 
-        names = {name: getattr(cls, name) for name in cls._member_names_ if name not in choice_names}
+        excluded_names = set(_flatten_choice_names(choice_names))
+        names = {name: getattr(cls, name) for name in cls._member_names_ if name not in excluded_names}
         return _create_subset(class_name, cls.__dict__, names)
 
 
@@ -211,3 +215,15 @@ def _create_subset(
         exec_body=lambda ns: ns.update(_get_public_methods(class_dict)),
     )
     return choices_class(class_name, names)
+
+
+def _flatten_choice_names(choice_names: typing.Any) -> list[str]:
+    names: list[str] = []
+    for choice_name in choice_names:
+        if isinstance(choice_name, type) and issubclass(choice_name, Choices):
+            names.extend(choice.name for choice in choice_name)
+        elif isinstance(choice_name, Choices):
+            names.append(choice_name.name)
+        else:
+            names.append(choice_name)
+    return names

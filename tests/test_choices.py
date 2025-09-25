@@ -16,6 +16,7 @@ class TestChoices(Choices):
 
     SUBSET1 = Choices.Subset("VAL1", "VAL2", "VAL3")
     SUBSET2 = Choices.Subset("VAL3", "VAL5")
+    SUBSET3 = Choices.Subset(*SUBSET1, *SUBSET2)
 
     @classmethod
     def displays(cls):
@@ -55,6 +56,7 @@ def test_values(name, value, display, kwargs):
     [
         ("SUBSET1", ["VAL1", "VAL2", "VAL3"]),
         ("SUBSET2", ["VAL3", "VAL5"]),
+        ("SUBSET3", ["VAL1", "VAL2", "VAL3", "VAL5"]),
     ],
 )
 def test_subsets(name, values):
@@ -116,6 +118,12 @@ def test_extraction():
     excluded3 = excluded1.exclude("VAL1", "VAL2")
     assert list(excluded3) == list(extracted3)
     assert repr(excluded3) == "<choices 'ExcludedSubset.Subset'>"
+
+    extracted4 = TestChoices.extract(TestChoices.VAL4, TestChoices.SUBSET2, "VAL6")
+    assert list(extracted4) == [TestChoices.VAL4, TestChoices.VAL3, TestChoices.VAL5, TestChoices.VAL6]
+
+    excluded4 = extracted4.exclude(TestChoices.VAL4, TestChoices.SUBSET2)
+    assert list(excluded4) == [TestChoices.VAL6]
 
 
 def test_extras():
