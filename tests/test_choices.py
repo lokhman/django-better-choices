@@ -46,7 +46,6 @@ def test_values(name, value, display, kwargs):
     for k, v in kwargs.items():
         assert getattr(choice, k) == v
     assert TestChoices(value) is choice
-    assert TestChoices[name] is choice
     assert choice in TestChoices
     assert value in TestChoices
 

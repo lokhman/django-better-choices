@@ -176,7 +176,7 @@ class Choices(_AttributeMixin, _Choice, enum.Enum, metaclass=_ChoicesMeta):
         return [(choice._value_, choice.display) for choice in cls]
 
     @classmethod
-    def extract(cls, *choice_names: typing.Union[str, _Self], class_name: str = "") -> _Self:
+    def extract(cls, *choice_names: typing.Union[str, type[_Self]], class_name: str = "") -> type[_Self]:
         """Extract specified choices to a new subset."""
         if not class_name:
             class_name = f"{cls.__name__}.Subset"
@@ -186,7 +186,7 @@ class Choices(_AttributeMixin, _Choice, enum.Enum, metaclass=_ChoicesMeta):
         return _create_subset(class_name, cls.__dict__, names)
 
     @classmethod
-    def exclude(cls, *choice_names: typing.Union[str, _Self], class_name: str = "") -> _Self:
+    def exclude(cls, *choice_names: typing.Union[str, type[_Self]], class_name: str = "") -> type[_Self]:
         """Exclude specified choices and return a new subset."""
         if not class_name:
             class_name = f"{cls.__name__}.Subset"
